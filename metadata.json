@@ -1,0 +1,7 @@
+{
+  "name": "Amour Directory",
+  "description": "A premium directory for love, relationships, courses, and podcasts with an AI-powered content creator.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
