@@ -4,7 +4,8 @@ import { config } from '../config';
 import { ContentType, Post, Agent } from '../types';
 
 // Use process.env.API_KEY directly for initialization as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// window.process is polyfilled in index.html to prevent ReferenceError
+const ai = new GoogleGenAI({ apiKey: (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : "" });
 
 /**
  * Helper to strip markdown formatting from AI responses
@@ -15,11 +16,9 @@ const cleanJsonString = (str: string): string => {
 
 export const generateSoulmateSketch = async (data: any): Promise<string | null> => {
   try {
-    // Generate a unique high-entropy signature for this specific generation
     const entropy = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const seed = Math.floor(Math.random() * 2147483647);
 
-    // Anatomical variation markers based on input keys to force diversity
     const faceShapes = ["Diamond", "Square", "Heart", "Oval", "Oblong", "Round", "Pear-shaped"];
     const noseTypes = ["Aquiline", "Roman", "Greek", "Button", "Nubian", "Snub", "Hawk"];
     const chosenFace = faceShapes[seed % faceShapes.length];
@@ -81,7 +80,6 @@ export const runCrewMission = async (topic: string, type: ContentType, instructi
   try {
     const prompt = `Create a high-quality ${type} about ${topic}. Instructions: ${instructions || 'Be thorough and empathetic.'}`;
     
-    // Using a strict response schema to prevent JSON parsing errors that cause "Lost Connection" errors
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
@@ -124,7 +122,7 @@ export const runCrewMission = async (topic: string, type: ContentType, instructi
     return JSON.parse(cleanJsonString(response.text || '{}'));
   } catch (error) {
     console.error("Crew Mission Failed:", error);
-    throw error; // Throw so the UI can catch the specific error
+    throw error;
   }
 };
 
