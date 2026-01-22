@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CircleDollarSign, BarChart4, TrendingUp, Terminal, ArrowLeft, Loader2, Sparkles, CheckCircle2, ShieldAlert, Cpu, Globe, Search, RefreshCw, Save } from 'lucide-react';
@@ -200,7 +199,7 @@ const AdminPriceStrategy: React.FC<AdminPriceStrategyProps> = ({ onBack, onRefre
                     <div className="flex-grow overflow-y-auto space-y-1 custom-scrollbar">
                         {missionLog.map((log, i) => (
                             <div key={i} className="flex">
-                                <span className="text-slate-700 mr-2">>>></span>
+                                <span className="text-slate-700 mr-2">{">>>"}</span>
                                 <span>{log}</span>
                             </div>
                         ))}

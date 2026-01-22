@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
+    <!-- Restored Tailwind CDN for instant and reliable styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -20,9 +21,16 @@
             },
             colors: {
               rose: {
-                50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af',
-                400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c',
-                800: '#9f1239', 900: '#881337',
+                50: '#fff1f2',
+                100: '#ffe4e6',
+                200: '#fecdd3',
+                300: '#fda4af',
+                400: '#fb7185',
+                500: '#f43f5e',
+                600: '#e11d48',
+                700: '#be123c',
+                800: '#9f1239',
+                900: '#881337',
               }
             },
             animation: {
@@ -47,24 +55,45 @@
     </script>
 
     <style>
-      body { background-color: #fff1f2; overflow-x: hidden; }
-      html { scroll-behavior: smooth; }
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #fda4af; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #f43f5e; }
+      body {
+        background-color: #fff1f2; /* rose-50 base */
+        overflow-x: hidden;
+      }
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #fda4af; 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #f43f5e; 
+      }
+      
+      /* Glass Utility */
       .glass {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.5);
       }
+      
       .glass-dark {
         background: rgba(15, 23, 42, 0.6);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
+
+      /* Text Gradients */
       .text-gradient {
         background-clip: text;
         -webkit-background-clip: text;
@@ -72,27 +101,24 @@
         background-image: linear-gradient(to right, #e11d48, #be123c);
       }
     </style>
-    
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@19",
-        "react-dom": "https://esm.sh/react-dom@19",
-        "react-dom/client": "https://esm.sh/react-dom@19/client",
-        "@google/genai": "https://esm.sh/@google/genai",
-        "lucide-react": "https://esm.sh/lucide-react",
-        "framer-motion": "https://esm.sh/framer-motion",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js"
-      }
-    }
-    </script>
-  </head>
-  
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "framer-motion": "https://esm.sh/framer-motion@^12.29.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.91.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+</head>
   <body>
     <div id="root"></div>
-    
     <script type="module" src="/index.tsx"></script>
-    
   </body>
 </html>
-

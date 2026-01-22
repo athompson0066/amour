@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, BrainCircuit, Rocket, FileText, BookOpen, Send, Loader2, ArrowLeft, Terminal, User, ChevronRight, CheckCircle2, ShieldAlert, Mail, Map, Cpu, Headphones, List, Book, MessageSquare, Image as ImageIcon, CircleDollarSign, Lock, Youtube, Video } from 'lucide-react';
@@ -269,11 +268,11 @@ const AdminAgentWorkspace: React.FC<AdminAgentWorkspaceProps> = ({ onBack, onPub
                 <div className="flex-grow space-y-2 font-mono text-xs text-slate-400 overflow-y-auto max-h-[250px] custom-scrollbar">
                     {missionLog.map((log, i) => (
                         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex items-start">
-                            <span className="text-slate-600 mr-2">></span>
+                            <span className="text-slate-600 mr-2">{">"}</span>
                             {log}
                         </motion.div>
                     ))}
-                    {isRunning && <div className="flex items-center text-rose-400"><span className="text-slate-600 mr-2">></span>Processing: {steps[currentStep].name}...</div>}
+                    {isRunning && <div className="flex items-center text-rose-400"><span className="text-slate-600 mr-2">{">"}</span>Processing: {steps[currentStep].name}...</div>}
                 </div>
                 {isRunning && (
                     <div className="mt-8">
