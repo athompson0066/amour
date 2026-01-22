@@ -1,20 +1,19 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { ContentType, Post, Agent } from '../types';
+import { config as appConfig } from '../config';
 
 /**
- * Initialize the Google GenAI client.
- * The API key must be obtained exclusively from the environment variable process.env.API_KEY.
- * We rely on the window.process polyfill in index.html for static deployments.
+ * Lazy initializer for the Google GenAI client.
+ * Prevents construction errors if the API key is missing at top-level.
  */
-const getApiKey = () => {
-  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-    return process.env.API_KEY;
+const getAI = () => {
+  const apiKey = appConfig.geminiApiKey;
+  if (!apiKey) {
+    console.warn("Gemini API key is missing. AI features will fail until configured.");
+    // Return a dummy object or throw a descriptive error when called
   }
-  return "";
+  return new GoogleGenAI({ apiKey: apiKey || 'MISSING_KEY' });
 };
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 /**
  * Helper to strip markdown formatting from AI responses
@@ -25,6 +24,7 @@ const cleanJsonString = (str: string): string => {
 
 export const generateSoulmateSketch = async (data: any): Promise<string | null> => {
   try {
+    const ai = getAI();
     const entropy = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const seed = Math.floor(Math.random() * 2147483647);
 
@@ -87,6 +87,7 @@ export const generateSoulmateSketch = async (data: any): Promise<string | null> 
 
 export const runCrewMission = async (topic: string, type: ContentType, instructions?: string, featureImageUrl?: string, isPremium: boolean = false, price: number = 0, videoCount: number = 0): Promise<any> => {
   try {
+    const ai = getAI();
     const prompt = `Create a high-quality ${type} about ${topic}. Instructions: ${instructions || 'Be thorough and empathetic.'}`;
     
     const response = await ai.models.generateContent({
@@ -138,6 +139,7 @@ export const runCrewMission = async (topic: string, type: ContentType, instructi
 export const generateBlogOutline = async (topic: string): Promise<string> => {
   if (!topic) return "Please provide a topic.";
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Create a structured blog post outline for a relationship advice article about: "${topic}".`,
@@ -152,6 +154,7 @@ export const generateBlogOutline = async (topic: string): Promise<string> => {
 export const enhanceContent = async (text: string): Promise<string> => {
   if (!text) return "";
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Rewrite the following text to be more engaging and professional: "${text}"`
@@ -164,6 +167,7 @@ export const enhanceContent = async (text: string): Promise<string> => {
 
 export const generatePricingStrategy = async (items: (Post | Agent)[]): Promise<any> => {
   try {
+    const ai = getAI();
     const prompt = `Return a JSON array of pricing proposals for these items: ${JSON.stringify(items)}`;
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -192,6 +196,7 @@ export const generatePricingStrategy = async (items: (Post | Agent)[]): Promise<
 
 export const generateCourseStructure = async (topic: string, audience: string, description: string): Promise<any> => {
   try {
+    const ai = getAI();
     const prompt = `Design a course about ${topic} for ${audience}. Description: ${description}`;
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -229,6 +234,7 @@ export const generateCourseStructure = async (topic: string, audience: string, d
 
 export const getAgentChatResponse = async (agent: Agent, userMessage: string, history: any[]): Promise<string> => {
   try {
+    const ai = getAI();
     const systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be helpful and professional.`;
     
     const chat = ai.chats.create({ 

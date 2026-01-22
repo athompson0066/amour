@@ -8,11 +8,10 @@
     <!-- Robust process polyfill for browser environment -->
     <script>
       (function() {
-        window.process = {
-          env: {
-            API_KEY: ""
-          }
-        };
+        window.process = window.process || {};
+        window.process.env = window.process.env || {};
+        // Vite compatible fallback
+        window.importMetaEnv = {};
       })();
     </script>
 
@@ -131,6 +130,6 @@
   </head>
   <body>
     <div id="root"></div>
-  <script type="module" src="/src/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

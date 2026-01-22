@@ -1,9 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Agent } from '../types';
 import { Mic, MicOff, PhoneOff, Volume2, AlertCircle, Loader2 } from 'lucide-react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { config } from '../config';
+import { config as appConfig } from '../config';
 
 interface VoiceInterfaceProps {
   agent: Agent;
@@ -97,7 +96,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
                 streamRef.current = stream;
 
                 // 3. Connect to Gemini Live API
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: appConfig.geminiApiKey });
                 
                 // Use custom instructions if defined, else fallback to auto-generated one
                 const systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be empathetic, professional, and concise. This is a voice call, so keep responses relatively short and conversational.`;
