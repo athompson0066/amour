@@ -5,16 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Amour - Love & Relationship Directory</title>
     
-    <!-- Robust process polyfill for browser environment -->
-    <script>
-      (function() {
-        window.process = window.process || {};
-        window.process.env = window.process.env || {};
-        // Vite compatible fallback
-        window.importMetaEnv = {};
-      })();
-    </script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -111,25 +101,24 @@
         background-image: linear-gradient(to right, #e11d48, #be123c);
       }
     </style>
-
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@19",
-        "react-dom": "https://esm.sh/react-dom@19",
-        "react-dom/client": "https://esm.sh/react-dom@19/client",
-        "@google/genai": "https://esm.sh/@google/genai",
-        "lucide-react": "https://esm.sh/lucide-react",
-        "framer-motion": "https://esm.sh/framer-motion",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js",
-        "react/": "https://esm.sh/react@19/",
-        "react-dom/": "https://esm.sh/react-dom@19/"
-      }
-    }
-    </script>
-  </head>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "framer-motion": "https://esm.sh/framer-motion@^12.29.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.91.0"
+  }
+}
+</script>
+</head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
