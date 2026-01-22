@@ -8,16 +8,18 @@ export type ContentType =
   | 'newsletter' 
   | 'guide' 
   | 'tutorial' 
-  | 'ebook';
+  | 'ebook'
+  | 'sketch';
 
 export interface ContentBlock {
   id: string;
-  type: 'text' | 'image' | 'header' | 'quote' | 'cta';
+  type: 'text' | 'image' | 'header' | 'quote' | 'cta' | 'agent';
   content: string;
   meta?: {
     url?: string;
     caption?: string;
     level?: 'h2' | 'h3';
+    agentId?: string; // Reference to an expert ID
   };
 }
 
@@ -50,6 +52,8 @@ export interface Agent {
   role: string;
   avatar: string;
   description: string;
+  systemInstruction?: string; // Custom AI behavior instructions
+  embedCode?: string; // Optional custom HTML/JS embed snippet
   price: string; // Display string e.g. "$2.99/min"
   priceValue?: number; // Numerical value for payment processing
   isOnline: boolean;

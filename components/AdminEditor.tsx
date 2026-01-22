@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
-import { Plus, Image, Type, Quote, Save, Wand2, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
-import { Post, ContentBlock, ContentType } from '../types';
-import { savePost } from '../services/storage';
+import React, { useState, useEffect } from 'react';
+import { Plus, Image, Type, Quote, Save, Wand2, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck } from 'lucide-react';
+import { Post, ContentBlock, ContentType, Agent } from '../types';
+import { savePost, getAgents, getAstroAgents } from '../services/storage';
 import { generateBlogOutline, enhanceContent, generateCourseStructure } from '../services/geminiService';
 
 interface AdminEditorProps {
@@ -23,6 +23,10 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const [isSaving, setIsSaving] = useState(false);
   const [tags, setTags] = useState(initialPost?.tags.join(', ') || '');
   
+  // Expert Selector State
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
+
   // Course Generator State
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseTopic, setCourseTopic] = useState('');
@@ -30,12 +34,17 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const [courseDescription, setCourseDescription] = useState('');
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const addBlock = (type: ContentBlock['type']) => {
+  useEffect(() => {
+    const agents = [...getAgents(), ...getAstroAgents()];
+    setAvailableAgents(agents);
+  }, []);
+
+  const addBlock = (type: ContentBlock['type'], content: string = '', meta: any = {}) => {
     const newBlock: ContentBlock = {
       id: Math.random().toString(36).substr(2, 9),
       type,
-      content: '',
-      meta: type === 'header' ? { level: 'h2' } : {}
+      content,
+      meta: type === 'header' ? { level: 'h2', ...meta } : meta
     };
     setBlocks([...blocks, newBlock]);
   };
@@ -56,7 +65,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
     setIsGenerating(true);
     const outline = await generateBlogOutline(title);
     
-    // Parse the outline into blocks (simple heuristic)
     const lines = outline.split('\n').filter(l => l.trim().length > 0);
     const newBlocks: ContentBlock[] = lines.map(line => {
        const cleanLine = line.replace(/^[-*#]+ /, '');
@@ -87,7 +95,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
             setIsPremium(true);
             if (data.price) setPrice(data.price);
             
-            // Transform blocks to have IDs
             if (data.blocks && Array.isArray(data.blocks)) {
                  const newBlocks = data.blocks.map((b: any) => ({
                     id: Math.random().toString(36).substr(2, 9),
@@ -99,7 +106,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
             }
             setShowCourseModal(false);
         } else {
-            setGenerationError("Failed to generate course. The AI response was incomplete. Please try a simpler topic.");
+            setGenerationError("Failed to generate course.");
         }
     } catch (e) {
         console.error(e);
@@ -107,6 +114,11 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
     } finally {
         setIsGenerating(false);
     }
+  };
+
+  const handleEmbedAgent = (agent: Agent) => {
+      addBlock('agent', `Embedded Expert: ${agent.name}`, { agentId: agent.id });
+      setShowAgentModal(false);
   };
 
   const handleSave = async () => {
@@ -126,21 +138,20 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
             avatar: 'https://picsum.photos/seed/admin/100/100',
             bio: 'Site Administrator'
           },
-          // Preserve original date if editing, else use current date
           publishedAt: initialPost?.publishedAt || new Date().toISOString(),
           readTime: type === 'course' ? '4 Week Course' : '5 min read',
           isPremium,
           price: type === 'course' ? price : undefined,
           tags: tags.split(',').map(t => t.trim()).filter(t => t),
           blocks,
-          relatedVideos: initialPost?.relatedVideos // Preserve videos from agents
+          relatedVideos: initialPost?.relatedVideos
         };
         
         await savePost(newPost);
         onSave();
     } catch (error) {
         console.error("Save failed:", error);
-        alert("Failed to save post. Check console for details.");
+        alert("Failed to save post.");
     } finally {
         setIsSaving(false);
     }
@@ -163,73 +174,53 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                 </div>
                 <div className="p-6 space-y-4">
                     <p className="text-slate-600 text-sm">
-                        Describe your course idea, and our AI will generate a complete curriculum, sales page copy, and suggested pricing.
+                        Describe your course idea, curriculum, and pricing details.
                     </p>
-                    
-                    {generationError && (
-                        <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-start">
-                            <AlertCircle size={16} className="mr-2 mt-0.5 flex-shrink-0" />
-                            {generationError}
-                        </div>
-                    )}
-
+                    {generationError && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-start"><AlertCircle size={16} className="mr-2 mt-0.5" />{generationError}</div>}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Course Topic</label>
-                        <input 
-                            type="text" 
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none"
-                            placeholder="e.g. Healing from Heartbreak"
-                            value={courseTopic}
-                            onChange={(e) => setCourseTopic(e.target.value)}
-                        />
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Topic</label>
+                        <input type="text" className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none" value={courseTopic} onChange={(e) => setCourseTopic(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Target Audience (Optional)</label>
-                        <input 
-                            type="text" 
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none"
-                            placeholder="e.g. Women in their 30s"
-                            value={courseAudience}
-                            onChange={(e) => setCourseAudience(e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Draft Outline / Instructions (Optional)</label>
-                        <textarea 
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none resize-none h-24"
-                            placeholder="e.g. Start with a module on self-love, then move to communication styles. Make the tone humorous but serious."
-                            value={courseDescription}
-                            onChange={(e) => setCourseDescription(e.target.value)}
-                        />
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Draft Outline</label>
+                        <textarea className="w-full px-4 py-2 border border-slate-300 rounded-lg h-24" value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
                     </div>
                 </div>
                 <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
-                    <button 
-                        onClick={() => setShowCourseModal(false)} 
-                        className="px-4 py-2 text-slate-500 mr-2 hover:text-slate-700"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={handleGenerateCourse}
-                        disabled={isGenerating || !courseTopic}
-                        className="px-6 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-md transition-all"
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Wand2 className="animate-spin mr-2" size={18} />
-                                Writing Curriculum...
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="mr-2" size={18} />
-                                Generate Course
-                            </>
-                        )}
+                    <button onClick={() => setShowCourseModal(false)} className="px-4 py-2 text-slate-500">Cancel</button>
+                    <button onClick={handleGenerateCourse} disabled={isGenerating} className="px-6 py-2 bg-rose-600 text-white rounded-full font-bold shadow-md">
+                        {isGenerating ? "Writing..." : "Generate Course"}
                     </button>
                 </div>
             </div>
         </div>
+      )}
+
+      {/* Agent Selector Modal */}
+      {showAgentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                  <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+                      <h3 className="text-lg font-bold text-slate-900">Select Expert to Embed</h3>
+                      <button onClick={() => setShowAgentModal(false)}><X size={24} /></button>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto p-4 space-y-2">
+                      {availableAgents.map(agent => (
+                          <button 
+                            key={agent.id} 
+                            onClick={() => handleEmbedAgent(agent)}
+                            className="w-full flex items-center p-3 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100"
+                          >
+                              <img src={agent.avatar} className="w-10 h-10 rounded-full object-cover mr-3" />
+                              <div className="text-left">
+                                  <div className="font-bold text-sm text-slate-900">{agent.name}</div>
+                                  <div className="text-[10px] text-slate-500 uppercase">{agent.role}</div>
+                              </div>
+                          </button>
+                      ))}
+                  </div>
+              </div>
+          </div>
       )}
 
       <div className="bg-white border-b border-slate-200 sticky top-16 z-40 px-6 py-4 flex justify-between items-center shadow-sm">
@@ -242,232 +233,78 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           <button 
             onClick={handleSave} 
             disabled={isSaving}
-            className="px-6 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 shadow-md flex items-center font-medium disabled:opacity-70 disabled:cursor-wait"
+            className="px-6 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 shadow-md flex items-center font-medium disabled:opacity-70"
           >
             {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
-            {isSaving ? 'Saving...' : 'Publish'}
+            Publish
           </button>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto mt-8 px-6">
-        {/* Meta Data Section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
-                        <input 
-                            type="text" 
-                            value={title} 
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter an engaging title..."
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none text-lg font-serif"
-                        />
+                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none text-lg font-serif" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Subtitle</label>
-                        <textarea 
-                            value={subtitle} 
-                            onChange={(e) => setSubtitle(e.target.value)}
-                            placeholder="A brief summary..."
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none h-24 resize-none"
-                        />
+                        <textarea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg h-24 resize-none" />
                     </div>
-                     <div className="flex items-center space-x-3 flex-wrap gap-y-2">
-                        <button 
-                            onClick={() => setShowCourseModal(true)}
-                            className="flex items-center space-x-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-full shadow-sm transition-all transform hover:scale-105"
-                        >
-                            <Sparkles size={14} />
-                            <span>Auto-Generate Course</span>
-                        </button>
-                        <button 
-                            onClick={handleAIOutline}
-                            disabled={isGenerating}
-                            className="flex items-center space-x-2 text-sm text-slate-600 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 px-3 py-2 rounded-full border border-slate-200 hover:border-rose-200 transition-colors"
-                        >
-                            <Wand2 size={14} className={isGenerating ? "animate-spin" : ""} />
-                            <span>Outline</span>
-                        </button>
-                     </div>
                 </div>
 
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Cover Image URL</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Cover Image</label>
                          <div className="flex space-x-2">
-                            <input 
-                                type="text" 
-                                value={coverImage} 
-                                onChange={(e) => setCoverImage(e.target.value)}
-                                className="flex-grow px-4 py-2 border border-slate-300 rounded-lg text-sm"
-                            />
-                            <button onClick={() => setCoverImage(`https://picsum.photos/seed/${Date.now()}/800/400`)} className="px-3 py-2 bg-slate-100 rounded-lg text-xs hover:bg-slate-200">Random</button>
-                         </div>
-                         <div className="mt-2 aspect-[2/1] bg-slate-100 rounded-lg overflow-hidden relative">
-                             <img src={coverImage} alt="Preview" className="w-full h-full object-cover" />
-                             <div className="absolute inset-0 bg-black/10"></div>
+                            <input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="flex-grow px-4 py-2 border border-slate-300 rounded-lg text-sm" />
                          </div>
                     </div>
-
                     <div className="flex gap-4">
                          <div className="flex-1">
-                             <label className="block text-sm font-medium text-slate-700 mb-1">Content Type</label>
-                             <select 
-                                value={type} 
-                                onChange={(e) => setType(e.target.value as ContentType)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                             >
+                             <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                             <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
                                  <option value="article">Article</option>
                                  <option value="course">Course</option>
                                  <option value="podcast">Podcast</option>
-                                 <option value="listicle">Listicle</option>
                              </select>
                          </div>
-                         <div className="flex-1">
-                             <label className="block text-sm font-medium text-slate-700 mb-1">Tags (comma sep)</label>
-                             <input 
-                                type="text" 
-                                value={tags}
-                                onChange={(e) => setTags(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                                placeholder="Love, Dating..."
-                             />
-                         </div>
-                    </div>
-
-                    <div className="space-y-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                        <div className="flex items-center space-x-2">
-                            <input 
-                                type="checkbox" 
-                                id="premium" 
-                                checked={isPremium} 
-                                onChange={(e) => setIsPremium(e.target.checked)}
-                                className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500" 
-                            />
-                            <label htmlFor="premium" className="text-sm font-medium text-yellow-800 flex items-center">
-                                <DollarSign size={14} className="mr-1" />
-                                Premium Monetized Content
-                            </label>
-                        </div>
-                        
-                        {isPremium && type === 'course' && (
-                            <div className="pl-6">
-                                <label className="block text-xs font-medium text-yellow-800 mb-1">Course Price ($)</label>
-                                <input 
-                                    type="number"
-                                    value={price}
-                                    onChange={(e) => setPrice(Number(e.target.value))}
-                                    className="w-24 px-2 py-1 text-sm border border-yellow-200 rounded focus:outline-none focus:border-yellow-400"
-                                    placeholder="49.99"
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
         </div>
 
-        {/* Builder Area */}
         <div className="space-y-4 min-h-[400px]">
-            {blocks.map((block, index) => (
-                <div key={block.id} className="group relative bg-white p-4 rounded-lg border border-transparent hover:border-slate-300 hover:shadow-sm transition-all">
-                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+            {blocks.map((block) => (
+                <div key={block.id} className="group relative bg-white p-4 rounded-lg border border-transparent hover:border-slate-300 transition-all">
+                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex space-x-1">
                          <button onClick={() => removeBlock(block.id)} className="p-1 text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
                     </div>
                     
-                    {block.type === 'header' && (
-                        <input 
-                            className={`w-full font-serif font-bold text-slate-900 border-none outline-none focus:ring-0 placeholder-slate-300 ${block.meta?.level === 'h2' ? 'text-2xl' : 'text-xl'}`}
-                            placeholder="Heading..."
-                            value={block.content}
-                            onChange={(e) => updateBlock(block.id, e.target.value)}
-                        />
-                    )}
-
-                    {block.type === 'text' && (
-                         <div className="relative">
-                             <textarea 
-                                className="w-full resize-y min-h-[100px] border-none outline-none focus:ring-0 text-slate-700 text-lg leading-relaxed placeholder-slate-300"
-                                placeholder="Start writing..."
-                                value={block.content}
-                                onChange={(e) => updateBlock(block.id, e.target.value)}
-                             />
-                             {block.content.length > 20 && (
-                                 <button 
-                                    onClick={async () => {
-                                        const improved = await enhanceContent(block.content);
-                                        updateBlock(block.id, improved);
-                                    }}
-                                    className="absolute bottom-2 right-2 text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                 >
-                                     ✨ Enhance
-                                 </button>
-                             )}
-                         </div>
-                    )}
-
-                    {block.type === 'quote' && (
-                        <div className="flex">
-                            <div className="w-1 bg-rose-400 mr-4 rounded-full"></div>
-                            <textarea 
-                                className="w-full resize-none border-none outline-none focus:ring-0 text-xl italic text-slate-600 placeholder-slate-300 bg-transparent"
-                                placeholder="Enter quote..."
-                                value={block.content}
-                                onChange={(e) => updateBlock(block.id, e.target.value)}
-                            />
-                        </div>
-                    )}
-
-                    {block.type === 'image' && (
-                        <div className="space-y-2">
-                            <input 
-                                className="w-full text-sm text-slate-500 border border-slate-200 rounded px-2 py-1"
-                                placeholder="Image URL..."
-                                value={block.content}
-                                onChange={(e) => updateBlock(block.id, e.target.value)}
-                            />
-                            {block.content && <img src={block.content} alt="Preview" className="h-48 rounded object-cover" />}
-                        </div>
-                    )}
-
-                     {block.type === 'cta' && (
-                        <div className="p-4 bg-slate-100 rounded text-center border-2 border-dashed border-slate-300">
-                             <input 
-                                className="w-full text-center bg-transparent font-bold text-slate-900 border-none outline-none focus:ring-0 placeholder-slate-400"
-                                placeholder="Call to Action Text..."
-                                value={block.content}
-                                onChange={(e) => updateBlock(block.id, e.target.value)}
-                            />
+                    {block.type === 'header' && <input className="w-full font-serif font-bold text-slate-900 border-none outline-none focus:ring-0 text-2xl" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} />}
+                    {block.type === 'text' && <textarea className="w-full resize-y min-h-[100px] border-none outline-none focus:ring-0 text-slate-700 text-lg" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} />}
+                    {block.type === 'image' && <input className="w-full text-sm text-slate-500 border border-slate-200 rounded px-2 py-1" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} />}
+                    {block.type === 'agent' && (
+                        <div className="p-4 bg-rose-50 rounded-xl border border-rose-100 flex items-center">
+                            <UserCheck className="text-rose-500 mr-3" />
+                            <span className="font-bold text-slate-900">{block.content}</span>
                         </div>
                     )}
                 </div>
             ))}
 
-            {/* Add Block Controls */}
             <div className="flex justify-center space-x-4 py-8 border-t border-slate-200 mt-8 border-dashed">
-                <span className="text-sm text-slate-400 uppercase tracking-widest font-semibold self-center mr-4">Add Block:</span>
-                <button onClick={() => addBlock('header')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                    <Type size={20} />
-                    <span className="text-xs mt-1">Header</span>
+                <button onClick={() => addBlock('header')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600"><Type size={20} /><span className="text-xs mt-1">Header</span></button>
+                <button onClick={() => addBlock('text')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600"><Layout size={20} /><span className="text-xs mt-1">Text</span></button>
+                <button onClick={() => setShowAgentModal(true)} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 group">
+                    <div className="p-2 bg-slate-100 group-hover:bg-rose-100 rounded-full transition-colors">
+                        <UserCheck size={20} />
+                    </div>
+                    <span className="text-xs mt-1 font-bold">Add Expert</span>
                 </button>
-                <button onClick={() => addBlock('text')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                    <Layout size={20} />
-                    <span className="text-xs mt-1">Text</span>
-                </button>
-                 <button onClick={() => addBlock('quote')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                    <Quote size={20} />
-                    <span className="text-xs mt-1">Quote</span>
-                </button>
-                 <button onClick={() => addBlock('image')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                    <Image size={20} />
-                    <span className="text-xs mt-1">Image</span>
-                </button>
-                <button onClick={() => addBlock('cta')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                    <DollarSign size={20} />
-                    <span className="text-xs mt-1">CTA</span>
-                </button>
+                <button onClick={() => addBlock('image')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600"><Image size={20} /><span className="text-xs mt-1">Image</span></button>
             </div>
         </div>
       </div>

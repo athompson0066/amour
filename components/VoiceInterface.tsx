@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Agent } from '../types';
 import { Mic, MicOff, PhoneOff, Volume2, AlertCircle, Loader2 } from 'lucide-react';
@@ -96,16 +97,19 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
                 streamRef.current = stream;
 
                 // 3. Connect to Gemini Live API
-                const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 
+                // Use custom instructions if defined, else fallback to auto-generated one
+                const systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be empathetic, professional, and concise. This is a voice call, so keep responses relatively short and conversational.`;
+
                 const sessionPromise = ai.live.connect({
-                    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                     config: {
                         responseModalities: [Modality.AUDIO],
                         speechConfig: {
                             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }, // Choices: Puck, Charon, Kore, Fenrir, Zephyr
                         },
-                        systemInstruction: `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be empathetic, professional, and concise. This is a voice call, so keep responses relatively short and conversational.`,
+                        systemInstruction,
                     },
                     callbacks: {
                         onopen: () => {
@@ -122,6 +126,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
                                 const inputData = e.inputBuffer.getChannelData(0);
                                 const pcmBlob = createBlob(inputData);
                                 
+                                // CRITICAL: Solely rely on sessionPromise resolves and then call `session.sendRealtimeInput`
                                 sessionPromise.then((session) => {
                                     session.sendRealtimeInput({ media: pcmBlob });
                                 });

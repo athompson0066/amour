@@ -1,24 +1,144 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { config } from '../config';
-import { ContentType } from '../types';
+import { ContentType, Post, Agent } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+// Use process.env.API_KEY directly for initialization as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+/**
+ * Helper to strip markdown formatting from AI responses
+ */
+const cleanJsonString = (str: string): string => {
+  return str.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
+export const generateSoulmateSketch = async (data: any): Promise<string | null> => {
+  try {
+    // Generate a unique high-entropy signature for this specific generation
+    const entropy = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const seed = Math.floor(Math.random() * 2147483647);
+
+    // Anatomical variation markers based on input keys to force diversity
+    const faceShapes = ["Diamond", "Square", "Heart", "Oval", "Oblong", "Round", "Pear-shaped"];
+    const noseTypes = ["Aquiline", "Roman", "Greek", "Button", "Nubian", "Snub", "Hawk"];
+    const chosenFace = faceShapes[seed % faceShapes.length];
+    const chosenNose = noseTypes[(seed >> 2) % noseTypes.length];
+
+    const systemPrompt = `
+      Role: You are "Aethel," a master clairvoyant sketch artist.
+      Mandate: Manifest a profoundly UNIQUE and CHARACTER-FILLED human portrait.
+      
+      STRICT NO-SAME-FACE POLICY:
+      - Do NOT use a generic "attractive" template.
+      - Create a face with specific, non-standard geometry: ${chosenFace} face shape, ${chosenNose} nose profile.
+      - Incorporate distinctive anatomical markers: Varying eye tilts, unique jawline widths, and specific eyebrow arches.
+      - Authenticity: Include subtle "human" imperfections (slight asymmetry, character lines, unique skin textures).
+
+      Artistic Style:
+      - Medium: Deep charcoal and raw graphite on heavy archival paper.
+      - Technique: Visible cross-hatching, smudged shadows, and raw, energetic pencil strokes.
+      - Lighting: Intense side-lighting (Chiaroscuro) to carve out unique bone structures.
+      - No Text: No signatures, borders, or watermarks.
+
+      Soul Profile for this channeling (ID: ${entropy}):
+      - Gender/Age: ${data.genderPreference} around ${data.ageRange}.
+      - Ethnicity: ${data.ethnicity}.
+      - Character Quality: ${data.keyQuality}. 
+      - Elemental Nature: ${data.element} (${data.element === 'Fire' ? 'sharp/intense' : 'softer/fluid'} features).
+      - Complementary Match: Since the user fears ${data.fear}, draw a partner who looks incredibly grounded, protective, and emotionally solid.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          { text: systemPrompt },
+          { text: `Aethel, the karmic seed is ${entropy}. Draw the one-of-a-kind face of the soulmate for ${data.firstName} now. Make it a masterpiece of unique human character.` }
+        ]
+      },
+      config: {
+        imageConfig: {
+          aspectRatio: "3:4"
+        },
+        seed: seed
+      }
+    });
+
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("Soulmate Sketch Generation Failed:", error);
+    return null;
+  }
+};
+
+export const runCrewMission = async (topic: string, type: ContentType, instructions?: string, featureImageUrl?: string, isPremium: boolean = false, price: number = 0, videoCount: number = 0): Promise<any> => {
+  try {
+    const prompt = `Create a high-quality ${type} about ${topic}. Instructions: ${instructions || 'Be thorough and empathetic.'}`;
+    
+    // Using a strict response schema to prevent JSON parsing errors that cause "Lost Connection" errors
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            subtitle: { type: Type.STRING },
+            coverImage: { type: Type.STRING },
+            youtubeSearchQueries: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING },
+              description: "List of 3-5 search queries to find related YouTube videos."
+            },
+            blocks: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  type: { type: Type.STRING, enum: ['header', 'text', 'quote', 'image', 'cta'] },
+                  content: { type: Type.STRING },
+                  meta: { 
+                    type: Type.OBJECT,
+                    properties: {
+                      level: { type: Type.STRING, enum: ['h2', 'h3'] }
+                    }
+                  }
+                },
+                required: ['type', 'content']
+              }
+            }
+          },
+          required: ['title', 'subtitle', 'blocks']
+        }
+      }
+    });
+
+    return JSON.parse(cleanJsonString(response.text || '{}'));
+  } catch (error) {
+    console.error("Crew Mission Failed:", error);
+    throw error; // Throw so the UI can catch the specific error
+  }
+};
 
 export const generateBlogOutline = async (topic: string): Promise<string> => {
   if (!topic) return "Please provide a topic.";
-
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Create a structured blog post outline for a relationship advice article about: "${topic}". 
-      The tone should be empathetic, expert, and encouraging. 
-      Return the result as a simple list of headers and brief descriptions of what to write in each section.`,
+      contents: `Create a structured blog post outline for a relationship advice article about: "${topic}".`,
     });
     return response.text || "No content generated.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Error generating outline. Please check your API key.";
+    return "Error generating outline.";
   }
 };
 
@@ -27,183 +147,91 @@ export const enhanceContent = async (text: string): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Rewrite the following text to be more engaging, warm, and professional, suitable for a relationship advice blog: "${text}"`
+        contents: `Rewrite the following text to be more engaging and professional: "${text}"`
     });
     return response.text || text;
   } catch (error) {
-      console.error("Gemini API Error", error);
       return text;
   }
 }
 
-/**
- * Orchestrates a "Crew" of agents to generate a complete piece of high-quality content.
- */
-export const runCrewMission = async (
-  topic: string, 
-  type: ContentType, 
-  instructions?: string, 
-  featureImageUrl?: string,
-  isPremium: boolean = false,
-  price: number = 0,
-  videoCount: number = 0
-): Promise<any> => {
-  if (!topic) return null;
-
+export const generatePricingStrategy = async (items: (Post | Agent)[]): Promise<any> => {
   try {
-    const prompt = `
-      ORCHESTRATION MISSION: Use a Crew-AI style workflow to create a high-quality ${type.toUpperCase()} about "${topic}".
-      
-      STEPS TAKEN BY THE CREW:
-      1. THE STRATEGIST: Research the psychology, trending nuances, and deep emotional stakes of "${topic}".
-      2. THE WORDSMITH: Use the Strategist's data to write compelling content tailored for the format of a ${type}.
-      3. THE EDITOR: Polish for flow, formatting, and impact.
-      
-      ${instructions ? `USER SPECIFIC INSTRUCTIONS (PRIORITY): "${instructions}"` : ''}
-      
-      COVER IMAGE INSTRUCTIONS:
-      ${featureImageUrl ? `STRICT: Use this exact URL for coverImage: "${featureImageUrl}"` : `CRITICAL: Generate a realistic, high-quality Unsplash image URL that perfectly matches the topic "${topic}". The URL must follow the format: https://images.unsplash.com/photo-[ID]?auto=format&fit=crop&q=80&w=1200. Do not use generic placeholders.`}
-
-      VIDEO ENRICHMENT:
-      ${videoCount > 0 ? `Include an array called "youtubeSearchQueries" with ${videoCount} specific, highly relevant YouTube search strings that would find the best video advice for this topic.` : ''}
-
-      MONETIZATION SETTINGS (STRICT REQUIREMENT):
-      - Set isPremium to: ${isPremium}
-      - Set price to: ${price}
-
-      SPECIFIC INSTRUCTIONS FOR FORMAT:
-      - If 'newsletter': Make it punchy, personal, and conversational.
-      - If 'course' or 'tutorial': Provide structured modules or clear sequential steps.
-      - If 'ebook': Provide a comprehensive, long-form structure with a foreword.
-      - If 'guide': Focus on "How-To" and "Actionable Steps".
-      - If 'podcast': Write it as a detailed script/outline with host notes.
-      - If 'listicle': Ensure there are clearly numbered points.
-
-      OUTPUT FORMAT:
-      You must return a valid JSON object matching the app's Post structure.
-      Include a title, subtitle, coverImage, readTime, and blocks.
-      
-      CONTENT GUIDELINES:
-      - Use headers like "### Key Concept", "### Action Steps", and "### Reflection" to trigger UI icons.
-
-      JSON SCHEMA:
-      {
-        "id": "generate_a_unique_string_id",
-        "title": "String",
-        "subtitle": "String",
-        "type": "${type}",
-        "coverImage": "A valid Unsplash URL string",
-        "author": {
-          "id": "amour_staff",
-          "name": "Amour Staff",
-          "avatar": "https://images.unsplash.com/photo-1675426513962-1db7e4c707c3?auto=format&fit=crop&q=80&w=150&h=150",
-          "bio": "The official content creation team at Amour, leveraging collaborative intelligence."
-        },
-        "isPremium": ${isPremium},
-        "price": ${price},
-        "readTime": "String",
-        "tags": ["Array of Strings"],
-        "youtubeSearchQueries": ["Array of search strings"],
-        "blocks": [
-          { "id": "uuid_style_string", "type": "header", "content": "Text", "meta": { "level": "h2" } },
-          { "id": "uuid_style_string", "type": "text", "content": "Text" },
-          { "id": "uuid_style_string", "type": "quote", "content": "Text" }
-        ]
-      }
-    `;
-
+    const prompt = `Return a JSON array of pricing proposals for these items: ${JSON.stringify(items)}`;
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: {
+      config: { 
         responseMimeType: "application/json",
-        temperature: 0.8,
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              proposedPrice: { type: Type.NUMBER },
+              reasoning: { type: Type.STRING }
+            },
+            required: ['id', 'proposedPrice', 'reasoning']
+          }
+        }
       }
     });
-
-    return JSON.parse(response.text || '{}');
+    return JSON.parse(cleanJsonString(response.text || '[]'));
   } catch (error) {
-    console.error("Crew Mission Failed:", error);
-    return null;
+    return [];
   }
 };
 
 export const generateCourseStructure = async (topic: string, audience: string, description: string): Promise<any> => {
-  if (!topic) return null;
-
   try {
-    const safeDescription = description ? description.substring(0, 500) : "";
-
-    const prompt = `
-      You are an elite course creator for a premium relationship advice platform. 
-      Design a comprehensive, high-value 4-week course about "${topic}".
-      Target Audience: ${audience || 'General'}.
-      Context: ${safeDescription}.
-
-      Output a VALID JSON object.
-      
-      JSON Structure:
-      {
-        "title": "Catchy Title",
-        "subtitle": "Compelling value proposition (1-2 sentences)",
-        "price": 49.99,
-        "readTime": "4 Week Course",
-        "tags": ["Tag1", "Tag2"],
-        "blocks": [ ... ]
-      }
-    `;
-
+    const prompt = `Design a course about ${topic} for ${audience}. Description: ${description}`;
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: {
+      config: { 
         responseMimeType: "application/json",
-        maxOutputTokens: 8192,
-        temperature: 0.7, 
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            subtitle: { type: Type.STRING },
+            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            price: { type: Type.NUMBER },
+            blocks: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  type: { type: Type.STRING, enum: ['header', 'text', 'quote', 'image', 'cta'] },
+                  content: { type: Type.STRING },
+                  meta: { type: Type.OBJECT }
+                },
+                required: ['type', 'content']
+              }
+            }
+          }
+        }
       }
     });
-    
-    return JSON.parse(response.text || '{}');
+    return JSON.parse(cleanJsonString(response.text || '{}'));
   } catch (error) {
-    console.error("Gemini API Error in generateCourseStructure:", error);
     return null;
   }
 };
 
-export const getAgentChatResponse = async (
-  agent: { name: string; role: string; description: string }, 
-  userMessage: string,
-  history: { role: 'user' | 'model'; text: string }[]
-): Promise<string> => {
+export const getAgentChatResponse = async (agent: Agent, userMessage: string, history: any[]): Promise<string> => {
   try {
-    const historyParts = history.map(h => ({
-      role: h.role,
-      parts: [{ text: h.text }]
-    }));
-
-    const systemInstruction = `
-      You are ${agent.name}, a ${agent.role}. 
-      Your profile description is: "${agent.description}".
-      
-      Instructions:
-      1. Stay strictly in character. 
-      2. Offer empathetic, actionable relationship advice.
-      3. Keep responses concise (under 100 words) and conversational.
-      4. Do not act like a generic AI assistant; have a personality fitting your role.
-    `;
-
-    const chat = ai.chats.create({
-      model: 'gemini-3-flash-preview',
-      config: {
-        systemInstruction: systemInstruction,
-      },
-      history: historyParts
+    const systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be helpful and professional.`;
+    
+    const chat = ai.chats.create({ 
+      model: 'gemini-3-flash-preview', 
+      config: { systemInstruction }, 
+      history: history.map(h => ({ role: h.role, parts: [{ text: h.text }] })) 
     });
-
     const result = await chat.sendMessage({ message: userMessage });
-    return result.text || "I'm listening...";
+    return result.text || "I am listening.";
   } catch (error) {
-    console.error("Agent Chat Error:", error);
-    return "I apologize, I'm having trouble connecting right now. Can you repeat that?";
+    return "Connection error.";
   }
 };

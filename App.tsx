@@ -5,21 +5,24 @@ import Layout from './components/Layout';
 import ArticleCard from './components/ArticleCard';
 import ArticleView from './components/ArticleView';
 import AdminEditor from './components/AdminEditor';
+import AdminAgentEditor from './components/AdminAgentEditor';
 import AdminSettings from './components/AdminSettings';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAgentWorkspace from './components/AdminAgentWorkspace';
+import AdminPriceStrategy from './components/AdminPriceStrategy';
 import AgentCard from './components/AgentCard';
 import ChatInterface from './components/ChatInterface';
 import VoiceInterface from './components/VoiceInterface';
 import PaymentModal from './components/PaymentModal';
 import VideoHub from './components/VideoHub';
 import HeartMendTracker from './components/apps/HeartMendTracker';
+import SoulmateSketch from './components/SoulmateSketch';
 import Hero from './components/Hero';
 import { FadeIn, StaggerGrid, StaggerItem } from './components/Animated';
 import { Post, ContentType, Agent, User } from './types';
-import { getPosts, getAgents, getAstroAgents } from './services/storage';
+import { getPosts, getAgents, getAstroAgents, deletePost as storageDeletePost, deleteAgent as storageDeleteAgent } from './services/storage';
 import { getCurrentUser, updateUser } from './services/authService';
-import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox } from 'lucide-react';
+import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState('home');
@@ -49,10 +52,12 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     setIsLoadingPosts(true);
-    const data = await getPosts();
-    setPosts(data);
-    setAgents(getAgents());
-    setAstroAgents(getAstroAgents());
+    const postData = await getPosts();
+    const agentData = getAgents();
+    const astroData = getAstroAgents();
+    setPosts(postData);
+    setAgents(agentData);
+    setAstroAgents(astroData);
     setIsLoadingPosts(false);
   };
 
@@ -113,7 +118,7 @@ const App: React.FC = () => {
       if (user && pendingPaymentItem) {
           const updatedUser = { 
               ...user, 
-              purchasedContentIds: [...user.purchasedContentIds, pendingPaymentItem.id] 
+              purchasedContentIds: Array.from(new Set([...user.purchasedContentIds, pendingPaymentItem.id])) 
           };
           updateUser(updatedUser);
           setUser(updatedUser);
@@ -124,6 +129,7 @@ const App: React.FC = () => {
 
           if ('type' in item) { 
               if (item.id === 'app-1') setCurrentView('app-heart-mend');
+              else if (item.id === 'soulmate-sketch-id') setCurrentView('soulmate-sketch');
               else {
                   setSelectedPost(item as Post);
                   setCurrentView('article');
@@ -135,6 +141,16 @@ const App: React.FC = () => {
       }
   };
 
+  const handleDeletePost = async (id: string) => {
+      await storageDeletePost(id);
+      await refreshData();
+  };
+
+  const handleDeleteAgent = async (id: string) => {
+      await storageDeleteAgent(id);
+      await refreshData();
+  };
+
   const filteredPosts = posts.filter(post => {
       const matchesType = filterType === 'all' || post.type === filterType;
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -143,6 +159,30 @@ const App: React.FC = () => {
 
   const toolApps = posts.filter(p => p.type === 'app');
 
+  const handleSketchClick = () => {
+      const sketchItem: Post = {
+          id: 'soulmate-sketch-id',
+          title: 'Soulmate Sketch Generator',
+          subtitle: 'A psychic portrait of your destined match.',
+          type: 'sketch',
+          coverImage: '',
+          author: { id: 'aethel', name: 'Aethel', avatar: '', bio: '' },
+          publishedAt: '',
+          readTime: '',
+          isPremium: true,
+          price: 29.99,
+          tags: [],
+          blocks: []
+      };
+      
+      if (!checkAccess(sketchItem.id, true)) {
+          setPendingPaymentItem(sketchItem);
+          setShowPaymentModal(true);
+          return;
+      }
+      setCurrentView('soulmate-sketch');
+  };
+
   return (
     <Layout 
         currentView={currentView} 
@@ -150,8 +190,8 @@ const App: React.FC = () => {
         isAdmin={isAdmin}
         toggleAdmin={handleToggleAdmin}
         user={user}
-        onLoginClick={() => {}} // No longer used
-        onLogoutClick={() => {}} // No longer used
+        onLoginClick={() => {}} 
+        onLogoutClick={() => {}}
     >
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
           <div className="absolute top-[10%] right-[5%] w-[400px] h-[400px] bg-rose-200/30 rounded-full blur-[100px] animate-blob"></div>
@@ -168,7 +208,11 @@ const App: React.FC = () => {
 
       {currentView === 'home' && (
         <>
-          <Hero onBrowse={() => document.getElementById('directory-content')?.scrollIntoView({ behavior: 'smooth' })} onConsult={() => setCurrentView('agents')} />
+          <Hero 
+            onBrowse={() => document.getElementById('directory-content')?.scrollIntoView({ behavior: 'smooth' })} 
+            onConsult={() => setCurrentView('agents')} 
+            onSketch={handleSketchClick}
+          />
           <div id="directory-content" className="max-w-7xl mx-auto px-4 py-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
                 <div className="flex flex-wrap gap-2">
@@ -236,16 +280,28 @@ const App: React.FC = () => {
       {currentView === 'toolkit' && (
          <div className="max-w-7xl mx-auto px-4 py-20">
              <FadeIn className="text-center mb-16"><h1 className="text-5xl font-serif font-bold">Relationship Toolkit</h1></FadeIn>
-             {toolApps.length > 0 ? (
-                <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {toolApps.map(app => <StaggerItem key={app.id}><ArticleCard post={app} onClick={handlePostClick} /></StaggerItem>)}
-                </StaggerGrid>
-             ) : (
-                <div className="text-center py-20 bg-white/50 rounded-3xl border-2 border-dashed border-slate-200">
-                    <Wrench className="mx-auto text-slate-200 mb-4" size={48} />
-                    <p className="text-slate-500">The toolkit is currently being polished. Check back soon!</p>
-                </div>
-             )}
+             <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <StaggerItem>
+                    <div 
+                        onClick={handleSketchClick}
+                        className="group relative bg-white border border-rose-100 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden h-full flex flex-col"
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-full -z-0"></div>
+                        <div className="relative z-10 flex-grow">
+                            <Stars className="text-rose-500 mb-4" size={32} />
+                            <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Soulmate Sketch</h3>
+                            <p className="text-slate-500 text-sm mb-6">Manifest a hand-drawn psychic portrait of your fated match based on astrological alignment.</p>
+                        </div>
+                        <div className="mt-auto pt-6 flex justify-between items-center border-t border-slate-50">
+                             <span className="text-rose-600 font-bold">$29.99 One-time</span>
+                             <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-rose-200">
+                                 <Sparkles size={18} />
+                             </div>
+                        </div>
+                    </div>
+                </StaggerItem>
+                {toolApps.map(app => <StaggerItem key={app.id}><ArticleCard post={app} onClick={handlePostClick} /></StaggerItem>)}
+             </StaggerGrid>
          </div>
       )}
 
@@ -272,6 +328,7 @@ const App: React.FC = () => {
       )}
 
       {currentView === 'app-heart-mend' && <HeartMendTracker user={user} onBack={() => setCurrentView('toolkit')} />}
+      {currentView === 'soulmate-sketch' && <SoulmateSketch isUnlocked={true} onUnlock={() => {}} onBack={() => setCurrentView('toolkit')} />}
       {currentView === 'video-hub' && <VideoHub />}
       {currentView === 'chat' && selectedAgent && <ChatInterface agent={selectedAgent} onBack={() => setCurrentView('agents')} />}
       {currentView === 'voice' && selectedAgent && <VoiceInterface agent={selectedAgent} onEndCall={() => setCurrentView('agents')} />}
@@ -284,27 +341,44 @@ const App: React.FC = () => {
                 setPendingPaymentItem(selectedPost);
                 setShowPaymentModal(true);
             }} 
-            onLoginRequest={() => {}} // No-op as auth is removed
+            onLoginRequest={() => {}} 
         />
       )}
       {currentView === 'admin-dashboard' && (
         <AdminDashboard 
+          posts={posts}
+          agents={agents}
+          isLoading={isLoadingPosts}
+          onRefresh={refreshData}
           onCreate={() => { setSelectedPost(null); setCurrentView('admin-create'); }} 
+          onCreateAgent={() => { setSelectedAgent(null); setCurrentView('admin-agent-edit'); }}
           onEdit={(p) => { setSelectedPost(p); setCurrentView('admin-edit'); }} 
+          onEditAgent={(a) => { setSelectedAgent(a); setCurrentView('admin-agent-edit'); }}
           onView={handlePostClick} 
+          onDelete={handleDeletePost}
+          onDeleteAgent={handleDeleteAgent}
           onGoToWorkspace={() => setCurrentView('admin-agents')}
+          onGoToPricing={() => setCurrentView('admin-pricing')}
           onSettings={() => setCurrentView('admin-settings')}
         />
       )}
       {(currentView === 'admin-create' || currentView === 'admin-edit') && (
         <AdminEditor 
             onCancel={() => setCurrentView('admin-dashboard')} 
-            onSave={() => { refreshData(); setCurrentView('admin-dashboard'); }} 
+            onSave={async () => { await refreshData(); setCurrentView('admin-dashboard'); }} 
             initialPost={selectedPost || undefined} 
         />
       )}
+      {currentView === 'admin-agent-edit' && (
+        <AdminAgentEditor 
+            onCancel={() => setCurrentView('admin-dashboard')} 
+            onSave={async () => { await refreshData(); setCurrentView('admin-dashboard'); }} 
+            initialAgent={selectedAgent || undefined} 
+        />
+      )}
       {currentView === 'admin-settings' && <AdminSettings onCancel={() => setCurrentView('admin-dashboard')} />}
-      {currentView === 'admin-agents' && <AdminAgentWorkspace onBack={() => setCurrentView('admin-dashboard')} onPublished={refreshData} />}
+      {currentView === 'admin-agents' && <AdminAgentWorkspace onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
+      {currentView === 'admin-pricing' && <AdminPriceStrategy onBack={() => setCurrentView('admin-dashboard')} onRefresh={refreshData} />}
       {currentView === 'library' && (
         <div className="max-w-7xl mx-auto px-4 py-20">
           <FadeIn className="text-center mb-16">

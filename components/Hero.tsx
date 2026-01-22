@@ -1,14 +1,15 @@
 
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Stars } from 'lucide-react';
 
 interface HeroProps {
   onBrowse: () => void;
   onConsult: () => void;
+  onSketch?: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onBrowse, onConsult }) => {
+const Hero: React.FC<HeroProps> = ({ onBrowse, onConsult, onSketch }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   
@@ -84,6 +85,16 @@ const Hero: React.FC<HeroProps> = ({ onBrowse, onConsult }) => {
           >
             Consult AI Expert
           </button>
+
+          {onSketch && (
+            <button 
+              onClick={onSketch}
+              className="px-8 py-4 bg-slate-900 text-white rounded-full font-bold text-lg shadow-xl hover:shadow-rose-900/20 hover:-translate-y-1 transition-all w-full sm:w-auto flex items-center justify-center"
+            >
+              <Stars className="mr-2 text-rose-400" size={20} />
+              Soulmate Sketch
+            </button>
+          )}
         </motion.div>
       </motion.div>
 
