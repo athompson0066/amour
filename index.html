@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -21,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CDN for instant restoration of styles -->
+    <!-- Restored Tailwind CDN as per Safe Mode instructions -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -71,11 +70,9 @@
         background-color: #fff1f2; /* rose-50 base */
         overflow-x: hidden;
       }
-      /* Smooth scrolling */
       html {
         scroll-behavior: smooth;
       }
-      /* Custom scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
       }
@@ -89,23 +86,18 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #f43f5e; 
       }
-      
-      /* Glass Utility */
       .glass {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.5);
       }
-      
       .glass-dark {
         background: rgba(15, 23, 42, 0.6);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
-
-      /* Text Gradients */
       .text-gradient {
         background-clip: text;
         -webkit-background-clip: text;
@@ -132,7 +124,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Pointing directly back to index.tsx for automatic handling by the platform -->
+    <!-- Pointing back to index.tsx for the platform's automatic handling -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
