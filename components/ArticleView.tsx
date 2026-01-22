@@ -41,53 +41,51 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
     if (!hasLoaded) return null;
 
     if (!agent) {
-        // Only show error in a subtle way to avoid breaking the reading flow
         return (
-            <div className="my-6 p-4 border border-dashed border-slate-200 rounded-xl flex items-center text-slate-400 text-xs italic">
-                <AlertTriangle size={14} className="mr-2" />
-                Expert reference "{agentIdOrSlug}" not found in directory.
+            <div className="my-6 p-4 border border-dashed border-slate-200 rounded-xl flex items-center text-slate-400 text-xs italic bg-slate-50/50">
+                <AlertTriangle size={14} className="mr-2 text-amber-500" />
+                Expert reference "{agentIdOrSlug}" not found.
             </div>
         );
     }
 
     return (
-        <div className="my-10 relative">
-            <div className="p-8 bg-gradient-to-br from-white to-rose-50/50 rounded-3xl border border-rose-100 shadow-sm flex flex-col md:flex-row items-center gap-8 group">
+        <div className="my-12 relative">
+            <div className="p-8 bg-gradient-to-br from-white to-rose-50/50 rounded-[2rem] border border-rose-100 shadow-xl shadow-rose-900/5 flex flex-col md:flex-row items-center gap-8 group">
                 <div className="relative flex-shrink-0">
-                    <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-xl group-hover:scale-105 transition-transform duration-500">
-                        <img src={agent.avatar} className="w-full h-full object-cover" />
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                        <img src={agent.avatar} className="w-full h-full object-cover" alt={agent.name} />
                     </div>
                     {agent.isOnline && (
-                        <div className="absolute bottom-1.5 right-1.5 w-6 h-6 bg-green-500 border-[3px] border-white rounded-full flex items-center justify-center">
+                        <div className="absolute bottom-1.5 right-1.5 w-7 h-7 bg-green-500 border-[4px] border-white rounded-full flex items-center justify-center shadow-md">
                             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                         </div>
                     )}
                 </div>
                 
                 <div className="flex-grow text-center md:text-left">
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                    <div className="flex flex-col md:flex-row md:items-baseline gap-2 mb-2">
                         <h4 className="text-2xl font-serif font-bold text-slate-900">{agent.name}</h4>
-                        <span className="hidden md:inline text-slate-200 text-xl">|</span>
-                        <p className="text-rose-600 text-xs font-bold uppercase tracking-widest">{agent.role}</p>
+                        <p className="text-rose-600 text-xs font-black uppercase tracking-[0.2em]">{agent.role}</p>
                     </div>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-6 max-w-xl line-clamp-2">
+                    <p className="text-slate-600 text-sm leading-relaxed mb-8 max-w-xl">
                         {agent.description}
                     </p>
                     
-                    <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                    <div className="flex flex-wrap justify-center md:justify-start gap-4">
                         <button 
                             onClick={() => setActiveMode('chat')}
-                            className="group flex items-center space-x-2 bg-slate-900 text-white px-6 py-3 rounded-full text-xs font-bold hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5"
+                            className="group flex items-center space-x-2 bg-slate-900 text-white px-8 py-3.5 rounded-full text-xs font-bold hover:bg-slate-800 transition-all hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1"
                         >
                             <MessageSquare size={16} />
-                            <span>Ask for Advice</span>
+                            <span>Private Consultation</span>
                         </button>
                         <button 
                             onClick={() => setActiveMode('voice')}
-                            className="group flex items-center space-x-2 bg-white border border-rose-200 text-rose-600 px-6 py-3 rounded-full text-xs font-bold hover:bg-rose-50 transition-all hover:shadow-md hover:-translate-y-0.5"
+                            className="group flex items-center space-x-2 bg-white border border-rose-200 text-rose-600 px-8 py-3.5 rounded-full text-xs font-bold hover:bg-rose-50 transition-all hover:shadow-xl hover:shadow-rose-100 hover:-translate-y-1"
                         >
                             <Phone size={16} className="fill-current" />
-                            <span>Voice Call</span>
+                            <span>Audio Call</span>
                         </button>
                     </div>
                 </div>
@@ -102,19 +100,19 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setActiveMode('none')}
-                            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+                            className="absolute inset-0 bg-slate-950/70 backdrop-blur-xl"
                         />
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 40 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-5xl h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                            exit={{ opacity: 0, scale: 0.95, y: 40 }}
+                            className="relative w-full max-w-5xl h-[85vh] bg-white rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.3)] overflow-hidden border border-white/20"
                         >
                             <button 
                                 onClick={() => setActiveMode('none')}
-                                className="absolute top-4 right-4 z-[110] p-2 bg-slate-100 text-slate-500 hover:bg-rose-500 hover:text-white rounded-full transition-all"
+                                className="absolute top-6 right-6 z-[110] p-3 bg-slate-100 text-slate-500 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-lg"
                             >
-                                <X size={20} />
+                                <X size={24} />
                             </button>
                             
                             {activeMode === 'chat' && <ChatInterface agent={agent} onBack={() => setActiveMode('none')} />}
@@ -127,84 +125,119 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
     );
 };
 
-// Enhanced Text Renderer with Shortcode Support
+// Advanced Content Renderer with Integrated Shortcode Injection
 const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
-    // 1. Identify all current agent slugs to handle un-bracketed references on their own lines
+    // 1. Get all available agent slugs and IDs
     const allAgents = [...getAgents(), ...getAstroAgents()];
-    const agentSlugs = allAgents.map(a => a.embedCode).filter(Boolean) as string[];
+    const agentIdentifiers = allAgents.flatMap(a => [
+        `[agent:${a.id}]`,
+        `[${a.embedCode}]`,
+        a.embedCode
+    ]).filter(Boolean) as string[];
 
-    // 2. Prepare the content: detect if a known slug is on its own line without brackets
-    let processedContent = content;
-    agentSlugs.forEach(slug => {
-        // This regex looks for the slug if it's the only thing on a line
-        const standaloneRegex = new RegExp(`(^|\\n)(${slug})(\\n|$)`, 'g');
-        processedContent = processedContent.replace(standaloneRegex, `$1[$2]$3`);
-    });
+    // 2. We need a regex that matches any of these identifiers.
+    // Brackets require escaping in regex.
+    const escapedIdentifiers = agentIdentifiers.map(id => 
+        id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    
+    // Sort identifiers by length descending to prevent partial matching (e.g. 'agent' matching before 'agent-slug')
+    escapedIdentifiers.sort((a, b) => b.length - a.length);
+    
+    const combinedRegex = new RegExp(`(${escapedIdentifiers.join('|')})`, 'g');
 
-    // 3. Regex to find shortcodes: [agent:ID] or [custom-slug]
-    const shortcodeRegex = /\[(agent:[^\]\s]+|[^\]\s]+)\]/g;
-    
-    // Split content by shortcodes while keeping the delimiters
-    const parts = processedContent.split(shortcodeRegex);
-    
+    // 3. Split the content and render parts
+    const parts = content.split(combinedRegex);
+
     return (
-        <div className="space-y-3 text-lg text-slate-700 leading-relaxed font-light">
+        <div className="space-y-4 text-lg text-slate-700 leading-relaxed font-light">
             {parts.map((part, index) => {
-                // If this part matches a shortcode identifier
-                if (index % 2 === 1) {
-                    const cleanSlug = part.startsWith('agent:') ? part.replace('agent:', '') : part;
+                const trimmedPart = part.trim();
+                
+                // check if this part is one of our agent identifiers
+                const isAgent = agentIdentifiers.some(id => id === part);
+
+                if (isAgent) {
+                    const cleanSlug = part.startsWith('[agent:') 
+                        ? part.slice(7, -1) 
+                        : part.startsWith('[') 
+                            ? part.slice(1, -1) 
+                            : part;
                     return <ExpertEmbed key={index} agentIdOrSlug={cleanSlug} />;
                 }
 
-                // Standard formatting for non-shortcode text
+                // Standard formatting for normal text parts
                 const lines = part.split('\n');
                 return (
                     <React.Fragment key={index}>
                         {lines.map((line, i) => {
-                            const trimmed = line.trim();
-                            if (!trimmed) return <br key={i} />;
+                            const trimmedLine = line.trim();
+                            if (!trimmedLine) return <div key={i} className="h-4" />;
 
-                            // Headers
-                            if (trimmed.startsWith('### Key Concept')) {
+                            // Headers and special UI sections
+                            if (trimmedLine.startsWith('### Key Concept')) {
                                 return (
-                                    <div key={i} className="flex items-center space-x-3 text-xl font-bold text-amber-700 bg-amber-50 p-4 rounded-xl mt-8 mb-4 border border-amber-100">
-                                        <div className="p-2 bg-white rounded-full shadow-sm"><Lightbulb className="text-amber-500 w-5 h-5" /></div>
-                                        <span>{trimmed.replace(/#/g, '').replace('Key Concept', '').trim() || 'Key Concept'}</span>
+                                    <div key={i} className="flex items-center space-x-4 text-xl font-bold text-amber-800 bg-amber-50 p-6 rounded-3xl mt-12 mb-6 border border-amber-100 shadow-sm">
+                                        <div className="p-3 bg-white rounded-2xl shadow-sm"><Lightbulb className="text-amber-500 w-6 h-6" /></div>
+                                        <span>{trimmedLine.replace(/###/g, '').replace('Key Concept', '').replace(/:/g, '').trim() || 'Core Strategy'}</span>
                                     </div>
                                 );
                             }
-                            if (trimmed.startsWith('### Action Steps')) {
+                            if (trimmedLine.startsWith('### Action Steps')) {
                                 return (
-                                    <div key={i} className="flex items-center space-x-3 text-xl font-bold text-emerald-700 bg-emerald-50 p-4 rounded-xl mt-8 mb-4 border border-emerald-100">
-                                        <div className="p-2 bg-white rounded-full shadow-sm"><ListChecks className="text-emerald-500 w-5 h-5" /></div>
-                                        <span>{trimmed.replace(/#/g, '').replace('Action Steps', '').trim() || 'Action Steps'}</span>
+                                    <div key={i} className="flex items-center space-x-4 text-xl font-bold text-emerald-800 bg-emerald-50 p-6 rounded-3xl mt-12 mb-6 border border-emerald-100 shadow-sm">
+                                        <div className="p-3 bg-white rounded-2xl shadow-sm"><ListChecks className="text-emerald-500 w-6 h-6" /></div>
+                                        <span>{trimmedLine.replace(/###/g, '').replace('Action Steps', '').replace(/:/g, '').trim() || 'Next Steps'}</span>
                                     </div>
                                 );
                             }
-                            if (trimmed.startsWith('###')) {
-                                return <h3 key={i} className="text-xl font-bold text-slate-900 mt-8 mb-3">{formatInlineStyles(trimmed.replace(/#/g, '').trim())}</h3>;
+                            if (trimmedLine.startsWith('### Reflection') || trimmedLine.startsWith('### Why This Matters')) {
+                                return (
+                                    <div key={i} className="flex items-center space-x-4 text-xl font-bold text-purple-800 bg-purple-50 p-6 rounded-3xl mt-12 mb-6 border border-purple-100 shadow-sm">
+                                        <div className="p-3 bg-white rounded-2xl shadow-sm"><BrainCircuit className="text-purple-500 w-6 h-6" /></div>
+                                        <span>{trimmedLine.replace(/###/g, '').replace('Reflection', '').replace('Why This Matters', '').replace(/:/g, '').trim() || 'Deep Insight'}</span>
+                                    </div>
+                                );
+                            }
+                            
+                            if (trimmedLine.startsWith('###')) {
+                                return <h3 key={i} className="text-2xl font-serif font-bold text-slate-900 mt-12 mb-4 leading-tight">{formatInlineStyles(trimmedLine.replace(/###/g, '').trim())}</h3>;
                             }
 
-                            // Lists
-                            if (trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                            // Bullet Lists
+                            if (trimmedLine.startsWith('•') || trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
                                  return (
-                                     <div key={i} className="flex items-start ml-2 mb-2">
-                                         <span className="text-rose-500 mr-3 mt-2 text-[8px]">●</span>
-                                         <span>{formatInlineStyles(trimmed.replace(/^[-*•]\s*/, ''))}</span>
+                                     <div key={i} className="flex items-start ml-2 mb-3">
+                                         <div className="w-1.5 h-1.5 rounded-full bg-rose-400 mr-4 mt-2.5 flex-shrink-0" />
+                                         <span className="text-slate-700">{formatInlineStyles(trimmedLine.replace(/^[-*•]\s*/, ''))}</span>
                                      </div>
                                  );
                             }
                             
+                            // Numbered Lists
+                            if (/^\d+\.\s/.test(trimmedLine)) {
+                                 return (
+                                     <div key={i} className="flex items-start ml-2 mb-3">
+                                         <span className="text-rose-600 font-bold mr-3 min-w-[1.2em]">{trimmedLine.split('.')[0]}.</span>
+                                         <span className="text-slate-700">{formatInlineStyles(trimmedLine.replace(/^\d+\.\s*/, ''))}</span>
+                                     </div>
+                                 );
+                            }
+
                             // Blockquotes
-                            if (trimmed.startsWith('>')) {
+                            if (trimmedLine.startsWith('>')) {
                                 return (
-                                    <div key={i} className="bg-rose-50 border-l-4 border-rose-400 p-5 my-6 rounded-r-xl italic text-slate-800 text-lg">
-                                         {formatInlineStyles(trimmed.substring(1).trim())}
+                                    <div key={i} className="relative p-10 my-12 overflow-hidden rounded-[2rem] bg-slate-50 border border-slate-100 group">
+                                         <div className="absolute top-4 left-4 text-rose-200 text-6xl font-serif opacity-50 select-none">“</div>
+                                         <p className="relative z-10 text-xl font-serif italic text-slate-800 leading-relaxed">
+                                            {formatInlineStyles(trimmedLine.substring(1).trim())}
+                                         </p>
                                     </div>
                                 );
                             }
 
-                            return <p key={i} className="mb-2">{formatInlineStyles(trimmed)}</p>;
+                            // Paragraph
+                            return <p key={i} className="mb-4">{formatInlineStyles(trimmedLine)}</p>;
                         })}
                     </React.Fragment>
                 );
@@ -214,10 +247,11 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
 };
 
 const formatInlineStyles = (text: string) => {
+    if (!text) return null;
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+            return <strong key={index} className="font-bold text-slate-950 decoration-rose-200 underline-offset-4 decoration-2">{part.slice(2, -2)}</strong>;
         }
         return part;
     });
@@ -228,7 +262,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
   const isCourse = post.type === 'course';
   const [showShareModal, setShowShareModal] = useState(false);
 
-  // Group blocks for courses
+  // Group blocks for courses logic
   const courseSections = useMemo(() => {
     if (!isCourse) return [post.blocks]; 
     const sections: ContentBlock[][] = [];
@@ -253,7 +287,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                const clean = headerBlock.content.split(':')[0].replace(/[*#]/g, '').trim();
                return clean.length > 15 ? `Part ${idx+1}` : clean;
           }
-          return idx === 0 ? "Intro" : `Part ${idx+1}`;
+          return idx === 0 ? "Introduction" : `Module ${idx}`;
       });
   }, [courseSections, isCourse]);
 
@@ -283,48 +317,51 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
   return (
     <div className="bg-white min-h-screen pb-20 relative">
       {isCourse && hasAccess && (
-          <div className="sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-rose-100 shadow-sm px-6 py-3 flex items-center justify-between transition-all">
-              <div className="flex items-center space-x-4">
-                  <div className="flex items-center text-rose-600 font-bold uppercase tracking-wider text-xs">
+          <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-xl border-b border-rose-100 shadow-sm px-6 py-4 flex items-center justify-between transition-all">
+              <div className="flex items-center space-x-6">
+                  <div className="flex items-center text-rose-600 font-black uppercase tracking-widest text-[10px]">
                      <Map size={14} className="mr-2" />
-                     <span>Progress</span>
+                     <span>Your Roadmap</span>
                   </div>
-                  <div className="hidden md:block w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-rose-500 transition-all duration-700 ease-out" style={{ width: `${progressPercentage}%` }}></div>
+                  <div className="hidden md:block w-64 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                      <div className="h-full bg-rose-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(244,63,94,0.4)]" style={{ width: `${progressPercentage}%` }}></div>
                   </div>
               </div>
-              <div className="text-xs font-medium text-slate-500">
-                  <span className="text-rose-600 font-bold">{progressPercentage}%</span> Complete
+              <div className="text-xs font-bold text-slate-500">
+                  <span className="text-rose-600">{progressPercentage}%</span> Journey Completed
               </div>
           </div>
       )}
 
       <ParallaxHeader imageUrl={post.coverImage}>
-        <div className="absolute top-6 left-6 z-20">
-          <button onClick={onBack} className="flex items-center space-x-2 text-white/90 hover:text-white bg-black/20 hover:bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full transition-all">
+        <div className="absolute top-8 left-8 z-20">
+          <button onClick={onBack} className="flex items-center space-x-2 text-white bg-black/30 hover:bg-black/50 backdrop-blur-md px-6 py-2.5 rounded-full transition-all border border-white/10">
             <ArrowLeft size={18} />
-            <span>Back to Directory</span>
+            <span className="font-bold text-sm">Return</span>
           </button>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-6 md:p-12 max-w-4xl mx-auto text-center text-white">
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-8 md:p-16 max-w-4xl mx-auto text-center text-white">
           <FadeIn>
-            <span className="inline-block px-3 py-1 bg-rose-500 text-xs font-bold tracking-widest uppercase rounded-full mb-4">{post.type}</span>
-            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-4 leading-tight">{post.title}</h1>
-            <p className="text-lg md:text-xl text-slate-200 mb-6 font-light max-w-2xl mx-auto">{post.subtitle}</p>
+            <span className="inline-block px-4 py-1.5 bg-rose-600 text-white text-[10px] font-black tracking-[0.2em] uppercase rounded-full mb-6 shadow-xl shadow-rose-900/20">{post.type}</span>
+            <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 leading-tight drop-shadow-lg">{post.title}</h1>
+            <p className="text-lg md:text-2xl text-slate-100 mb-8 font-light max-w-2xl mx-auto leading-relaxed opacity-90">{post.subtitle}</p>
           </FadeIn>
         </div>
       </ParallaxHeader>
 
-      <article className="max-w-3xl mx-auto px-6 py-12">
+      <article className="max-w-3xl mx-auto px-6 py-16">
         {courseSections.map((section, sectionIndex) => {
             if (!hasAccess && post.isPremium && sectionIndex > 0) {
                 if (sectionIndex === 1) {
                     return (
-                        <FadeIn key="paywall" className="relative mt-8 p-12 bg-rose-50 rounded-3xl border border-rose-100 text-center overflow-hidden shadow-sm">
-                            <Lock className="text-rose-500 w-12 h-12 mx-auto mb-4" />
-                            <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Unlock Full Access</h3>
-                            <button onClick={onUnlock} className="bg-rose-600 text-white px-8 py-3 rounded-full font-bold hover:bg-rose-700 transition-transform hover:scale-105 shadow-lg mt-6">
-                                Unlock for ${post.price || '9.99'}
+                        <FadeIn key="paywall" className="relative mt-12 p-16 bg-gradient-to-br from-rose-50 to-white rounded-[3rem] border border-rose-100 text-center overflow-hidden shadow-2xl">
+                            <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 transform rotate-3 shadow-lg">
+                                <Lock size={32} />
+                            </div>
+                            <h3 className="text-3xl font-serif font-bold text-slate-900 mb-4">Complete Your Journey</h3>
+                            <p className="text-slate-600 mb-10 max-w-sm mx-auto">This specialized material is part of our premium catalog. Unlock full access to continue.</p>
+                            <button onClick={onUnlock} className="bg-rose-600 text-white px-10 py-4 rounded-full font-bold hover:bg-rose-700 transition-all hover:scale-105 shadow-xl shadow-rose-900/20">
+                                Unlock Now for ${post.price || '9.99'}
                             </button>
                         </FadeIn>
                     );
@@ -333,17 +370,33 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
             }
 
             return (
-                <div key={sectionIndex} id={`section-${sectionIndex}`} className="mb-16 scroll-mt-32">
+                <div key={sectionIndex} id={`section-${sectionIndex}`} className="mb-20 scroll-mt-40">
                     {section.map((block) => {
                         switch(block.type) {
                             case 'header':
-                                return <FadeIn key={block.id}><h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 mt-12 mb-4">{block.content}</h2></FadeIn>;
+                                return <FadeIn key={block.id}><h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mt-16 mb-8 leading-tight">{block.content}</h2></FadeIn>;
                             case 'text':
-                                return <FadeIn key={block.id} className="mb-8"><RichTextRenderer content={block.content} /></FadeIn>;
+                                return <FadeIn key={block.id} className="mb-10"><RichTextRenderer content={block.content} /></FadeIn>;
                             case 'quote':
-                                return <FadeIn key={block.id}><blockquote className="border-l-4 border-rose-400 pl-6 py-4 my-10 italic text-xl text-slate-800 bg-slate-50 rounded-r-lg shadow-sm">"{block.content}"</blockquote></FadeIn>;
+                                return (
+                                    <FadeIn key={block.id}>
+                                        <div className="relative p-12 my-16 overflow-hidden rounded-[2.5rem] bg-rose-50/50 border border-rose-100">
+                                             <div className="absolute top-4 left-6 text-rose-200 text-7xl font-serif opacity-50 select-none">“</div>
+                                             <p className="relative z-10 text-2xl font-serif italic text-slate-800 leading-relaxed text-center">
+                                                {block.content}
+                                             </p>
+                                        </div>
+                                    </FadeIn>
+                                );
                             case 'image':
-                                return <FadeIn key={block.id}><img src={block.content} alt="Content" className="w-full rounded-xl shadow-md my-8" /></FadeIn>;
+                                return (
+                                    <FadeIn key={block.id}>
+                                        <figure className="my-12">
+                                            <img src={block.content} alt="Visual Content" className="w-full rounded-[2rem] shadow-2xl border border-slate-100" />
+                                            {block.meta?.caption && <figcaption className="text-center text-slate-400 text-xs mt-4 italic">{block.meta.caption}</figcaption>}
+                                        </figure>
+                                    </FadeIn>
+                                );
                             case 'agent':
                                 return <FadeIn key={block.id}><ExpertEmbed agentIdOrSlug={block.meta?.agentId || ''} /></FadeIn>;
                             default: return null;
@@ -351,10 +404,14 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                     })}
 
                     {isCourse && hasAccess && sectionIndex === completedSections && sectionIndex < courseSections.length - 1 && (
-                        <FadeIn className="mt-12 p-8 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center">
-                             <CheckCircle className="text-green-600 w-12 h-12 mb-4" />
-                             <button onClick={handleCompleteSection} className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all">
-                                 Complete {sectionTitles[sectionIndex]} & Continue
+                        <FadeIn className="mt-16 p-12 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 flex flex-col items-center text-center shadow-lg shadow-emerald-900/5">
+                             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 text-emerald-600 shadow-sm">
+                                 <CheckCircle size={32} />
+                             </div>
+                             <h4 className="text-xl font-bold text-slate-900 mb-2">Step Complete!</h4>
+                             <p className="text-slate-600 mb-8 max-w-xs">You've mastered this module. Ready to dive into the next chapter?</p>
+                             <button onClick={handleCompleteSection} className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-full font-bold shadow-xl shadow-emerald-900/10 transition-all hover:-translate-y-1">
+                                 Advance to {sectionTitles[sectionIndex + 1]}
                              </button>
                         </FadeIn>
                     )}
@@ -362,10 +419,17 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
             );
         })}
 
-        <div className="mt-16 flex justify-between items-center pt-8 border-t border-slate-200">
-          <button onClick={handleShare} className="group flex items-center space-x-2 bg-rose-50 text-rose-600 px-6 py-3 rounded-full font-bold hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+        <div className="mt-20 flex justify-between items-center pt-10 border-t border-slate-100">
+          <div className="flex items-center space-x-4">
+             <img src={post.author.avatar} className="w-12 h-12 rounded-full border-2 border-rose-100 shadow-sm" alt={post.author.name} />
+             <div>
+                 <p className="text-xs font-black text-rose-600 uppercase tracking-widest">Author</p>
+                 <p className="text-sm font-bold text-slate-800">{post.author.name}</p>
+             </div>
+          </div>
+          <button onClick={handleShare} className="group flex items-center space-x-3 bg-slate-50 text-slate-600 px-8 py-4 rounded-full font-bold hover:bg-rose-600 hover:text-white transition-all shadow-sm hover:shadow-rose-900/20">
             <Share2 size={18} />
-            <span>Share Resource</span>
+            <span>Spread the Knowledge</span>
           </button>
         </div>
       </article>

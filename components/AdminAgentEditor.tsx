@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Save, X, UserCheck, Image, DollarSign, BrainCircuit, Activity, Plus, Trash2, Loader2, Sparkles, Code2, Copy, Check, Info, Share2 } from 'lucide-react';
+import { Save, X, UserCheck, Image, DollarSign, BrainCircuit, Activity, Plus, Trash2, Loader2, Sparkles, Code2, Copy, Check, Info, Share2, Zap } from 'lucide-react';
 import { Agent } from '../types';
 import { saveAgent, addCustomAgent } from '../services/storage';
 
@@ -22,7 +22,7 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
   const [isOnline, setIsOnline] = useState(initialAgent?.isOnline ?? true);
   const [expertiseStr, setExpertiseStr] = useState(initialAgent?.expertise.join(', ') || '');
   const [isSaving, setIsSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!name || !role) return alert("Name and Role are mandatory.");
@@ -62,10 +62,10 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
     }
   };
 
-  const copySnippet = (text: string) => {
+  const copySnippet = (text: string, id: string) => {
       navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(id);
+      setTimeout(() => setCopied(null), 2000);
   };
 
   return (
@@ -73,14 +73,14 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
       <div className="bg-white border-b border-slate-200 sticky top-16 z-40 px-6 py-4 flex justify-between items-center shadow-sm">
         <h2 className="text-xl font-bold text-slate-700 flex items-center">
             <UserCheck className="mr-2 text-rose-500" />
-            {initialAgent ? 'Edit Expert Profile' : 'Onboard New Expert'}
+            {initialAgent ? 'Update Profile' : 'Expert Onboarding'}
         </h2>
         <div className="flex space-x-3">
-          <button onClick={onCancel} className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-md transition-colors">Cancel</button>
+          <button onClick={onCancel} className="px-5 py-2.5 text-slate-500 hover:bg-slate-100 rounded-full transition-colors text-sm font-bold">Cancel</button>
           <button 
             onClick={handleSave} 
             disabled={isSaving}
-            className="px-6 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 shadow-md flex items-center font-medium disabled:opacity-70"
+            className="px-8 py-2.5 bg-rose-600 text-white rounded-full hover:bg-rose-700 shadow-xl shadow-rose-900/10 flex items-center font-bold disabled:opacity-70 transition-all active:scale-95"
           >
             {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
             Save Profile
@@ -88,138 +88,146 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto mt-8 px-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-3">
-                {/* Visual Identity */}
-                <div className="p-8 bg-slate-50 border-r border-slate-100 flex flex-col items-center">
-                    <div className="relative mb-8">
-                        <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-white">
+      <div className="max-w-6xl mx-auto mt-10 px-6">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12">
+                {/* Left Panel: Persona */}
+                <div className="lg:col-span-4 p-10 bg-slate-50/80 border-r border-slate-100 flex flex-col items-center">
+                    <div className="relative mb-10">
+                        <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-white">
                             <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
                         <button 
                             onClick={() => setAvatar(`https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`)}
-                            className="absolute bottom-1 right-1 p-2.5 bg-rose-600 rounded-full shadow-lg text-white hover:bg-rose-700 transition-colors border-4 border-white"
+                            className="absolute bottom-1 right-1 p-3 bg-rose-600 rounded-full shadow-2xl text-white hover:bg-rose-700 transition-all border-4 border-white"
                         >
                             <Plus size={20} />
                         </button>
                     </div>
                     
-                    <div className="w-full space-y-4">
+                    <div className="w-full space-y-6">
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Avatar URL</label>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Identity Visual</label>
                             <input 
                                 type="text" 
                                 value={avatar} 
                                 onChange={(e) => setAvatar(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-rose-500 outline-none"
+                                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-rose-500 outline-none transition-all"
                             />
                         </div>
 
-                        <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200">
-                             <div className="flex items-center space-x-2">
-                                <Activity size={14} className={isOnline ? 'text-green-500' : 'text-slate-400'} />
-                                <span className="text-xs font-bold text-slate-700 uppercase">Expert Status</span>
+                        <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                             <div className="flex items-center space-x-3">
+                                <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
+                                <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Active Now</span>
                              </div>
                              <label className="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="sr-only peer" />
-                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
                              </label>
                         </div>
 
                         {initialAgent && (
-                            <div className="mt-6 p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
-                                <div className="flex items-center justify-between mb-4">
+                            <div className="mt-8 p-6 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl overflow-hidden relative group">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Zap className="text-rose-500" size={60} />
+                                </div>
+                                <div className="flex items-center justify-between mb-6 relative z-10">
                                     <div className="flex items-center space-x-2">
-                                        <Share2 className="text-rose-500" size={14} />
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Embed Snippet</label>
+                                        <Share2 className="text-rose-500" size={16} />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Embed Slugs</label>
                                     </div>
-                                    {copied && <span className="text-[9px] text-emerald-400 font-bold animate-pulse">COPIED</span>}
                                 </div>
                                 
-                                <div className="space-y-3">
+                                <div className="space-y-4 relative z-10">
                                     <div 
-                                        onClick={() => copySnippet(`[agent:${initialAgent.id}]`)}
-                                        className="group flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 cursor-pointer hover:border-rose-500/30 transition-all"
+                                        onClick={() => copySnippet(`[agent:${initialAgent.id}]`, 'id')}
+                                        className="group flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5 cursor-pointer hover:border-rose-500/50 transition-all active:scale-95"
                                     >
-                                        <code className="text-[11px] text-rose-300 font-mono">[agent:{initialAgent.id.substring(0,8)}...]</code>
-                                        <Copy size={14} className="text-slate-500 group-hover:text-white" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Global ID</span>
+                                            <code className="text-[11px] text-rose-300 font-mono">[agent:{initialAgent.id.substring(0,8)}...]</code>
+                                        </div>
+                                        {copied === 'id' ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} className="text-slate-600 group-hover:text-white" />}
                                     </div>
                                     {embedCode && (
                                         <div 
-                                            onClick={() => copySnippet(`[${embedCode}]`)}
-                                            className="group flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 cursor-pointer hover:border-rose-500/30 transition-all"
+                                            onClick={() => copySnippet(`[${embedCode}]`, 'slug')}
+                                            className="group flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5 cursor-pointer hover:border-rose-500/50 transition-all active:scale-95"
                                         >
-                                            <code className="text-[11px] text-rose-400 font-mono">[{embedCode}]</code>
-                                            <Copy size={14} className="text-slate-500 group-hover:text-white" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Custom Slug</span>
+                                                <code className="text-[11px] text-rose-400 font-mono">[{embedCode}]</code>
+                                            </div>
+                                            {copied === 'slug' ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} className="text-slate-600 group-hover:text-white" />}
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-[9px] text-slate-500 mt-4 leading-relaxed">
-                                    Paste either code (including brackets) into any content block to embed this expert.
+                                <p className="text-[10px] text-slate-500 mt-6 leading-relaxed italic relative z-10">
+                                    Paste either code into any article, blog post, or course to embed this complete AI Expert experience.
                                 </p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Form Content */}
-                <div className="md:col-span-2 p-8 space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
+                {/* Right Panel: Fields */}
+                <div className="lg:col-span-8 p-10 space-y-8 bg-white">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Expert Name</label>
+                            <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Full Name</label>
                             <input 
                                 type="text" 
                                 value={name} 
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="e.g. Dr. Jordan Smith"
-                                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+                                className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Expert Role</label>
+                            <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Expert Role</label>
                             <input 
                                 type="text" 
                                 value={role} 
                                 onChange={(e) => setRole(e.target.value)}
-                                placeholder="e.g. Relationship Coach"
-                                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+                                placeholder="e.g. Relationship Architect"
+                                className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1.5">Directory Biography</label>
+                        <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Directory Bio</label>
                         <textarea 
                             value={description} 
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief professional intro for the expert card..."
-                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none h-20 resize-none text-sm"
+                            placeholder="A powerful intro that will appear on the expert's card and embedded widgets..."
+                            className="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none h-28 resize-none text-sm leading-relaxed"
                         />
                     </div>
 
-                    <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 shadow-inner">
-                        <div className="flex items-center space-x-2 mb-3">
-                            <Sparkles className="text-indigo-600" size={18} />
-                            <label className="block text-sm font-bold text-indigo-900">AI Personality & Instructions</label>
+                    <div className="bg-indigo-50/50 p-8 rounded-[2rem] border border-indigo-100 shadow-inner">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <div className="p-2 bg-indigo-100 rounded-xl"><Sparkles className="text-indigo-600" size={20} /></div>
+                            <label className="block text-sm font-black text-indigo-900">AI Personality Core</label>
                         </div>
                         <textarea 
                             value={systemInstruction} 
                             onChange={(e) => setSystemInstruction(e.target.value)}
-                            placeholder="Example: Act as a direct relationship coach. Use gentle metaphors."
-                            className="w-full px-4 py-3 border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-24 resize-none bg-white text-sm"
+                            placeholder="Example: Act as a direct, results-oriented relationship coach. Use sports analogies. Be encouraging but firm."
+                            className="w-full px-5 py-4 border border-indigo-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none h-32 resize-none bg-white text-sm leading-relaxed"
                         />
                     </div>
 
-                    <div className="bg-rose-50/50 p-6 rounded-2xl border border-rose-100 shadow-inner">
+                    <div className="bg-rose-50/50 p-8 rounded-[2rem] border border-rose-100 shadow-inner">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-2">
-                                <Code2 className="text-rose-500" size={18} />
-                                <label className="block text-sm font-bold text-rose-900">Custom Embed Shortcode</label>
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-rose-100 rounded-xl"><Code2 className="text-rose-600" size={20} /></div>
+                                <label className="block text-sm font-black text-rose-900">Content Embed Shortcode</label>
                             </div>
-                            <div className="flex items-center text-[10px] text-rose-400 italic">
-                                <Info size={12} className="mr-1" />
-                                No spaces allowed
+                            <div className="flex items-center text-[10px] text-rose-400 font-bold uppercase tracking-widest">
+                                <Info size={14} className="mr-2" />
+                                URL Friendly
                             </div>
                         </div>
                         <input 
@@ -227,32 +235,32 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
                             value={embedCode} 
                             onChange={(e) => setEmbedCode(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                             placeholder="e.g. relationship-agent"
-                            className="w-full px-4 py-3 border border-rose-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none bg-white font-mono text-sm"
+                            className="w-full px-5 py-4 border border-rose-200 rounded-2xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none bg-white font-mono text-sm text-rose-600"
                         />
-                        <p className="text-[10px] text-rose-400 font-medium mt-3 leading-tight">
-                            * Use <strong>[{embedCode || 'relationship-agent'}]</strong> in your posts to embed this expert.
+                        <p className="text-[10px] text-rose-400 font-bold mt-4 leading-relaxed tracking-wide px-1">
+                            * Use this slug to embed this agent into your blog posts. Example: typing <strong className="text-rose-600 font-black">[{embedCode || 'my-agent'}]</strong> anywhere in your article text will replace it with the complete interactive agent widget.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                          <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Session Rate</label>
+                            <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Consultation Rate</label>
                             <input 
                                 type="text" 
                                 value={price} 
                                 onChange={(e) => setPrice(e.target.value)}
                                 placeholder="$2.99/min"
-                                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+                                className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Expertise Tags</label>
+                            <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Expertise Domains</label>
                             <input 
                                 type="text" 
                                 value={expertiseStr} 
                                 onChange={(e) => setExpertiseStr(e.target.value)}
                                 placeholder="Dating, Loss, Trust..."
-                                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+                                className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                             />
                         </div>
                     </div>
