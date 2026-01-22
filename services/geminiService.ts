@@ -2,8 +2,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ContentType, Post, Agent } from '../types';
 
-// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+/**
+ * Initialize the Google GenAI client.
+ * The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+ * We rely on the window.process polyfill in index.html for static deployments.
+ */
+const getApiKey = () => {
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    return process.env.API_KEY;
+  }
+  return "";
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 /**
  * Helper to strip markdown formatting from AI responses

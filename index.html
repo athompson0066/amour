@@ -6,13 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Amour - Love & Relationship Directory</title>
     
-    <!-- Robust process polyfill for browser environment -->
+    <!-- Critical: Robust process polyfill for browser environment -->
     <script>
-      window.process = {
-        env: {
-          API_KEY: ""
-        }
-      };
+      (function() {
+        window.process = {
+          env: {
+            API_KEY: ""
+          }
+        };
+      })();
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -110,18 +112,20 @@
       }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://aistudiocdn.com/react@^19.2.1",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-        "react/": "https://aistudiocdn.com/react@^19.2.1/",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
-        "framer-motion": "https://aistudiocdn.com/framer-motion@^11.0.20",
-        "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.2"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@19",
+    "react-dom": "https://esm.sh/react-dom@19",
+    "react-dom/client": "https://esm.sh/react-dom@19/client",
+    "@google/genai": "https://esm.sh/@google/genai",
+    "lucide-react": "https://esm.sh/lucide-react",
+    "framer-motion": "https://esm.sh/framer-motion",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
   </head>
   <body>
     <div id="root"></div>
