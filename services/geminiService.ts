@@ -1,11 +1,9 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { config } from '../config';
 import { ContentType, Post, Agent } from '../types';
 
-// Use process.env.API_KEY directly for initialization as per guidelines
-// window.process is polyfilled in index.html to prevent ReferenceError
-const ai = new GoogleGenAI({ apiKey: (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : "" });
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
  * Helper to strip markdown formatting from AI responses
