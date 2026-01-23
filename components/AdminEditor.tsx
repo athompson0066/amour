@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown } from 'lucide-react';
-import { Post, ContentBlock, ContentType, Agent, VideoItem } from '../types';
+import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown } from 'lucide-react';
+import { Post, ContentBlock, ContentType, Agent, VideoItem, QuizQuestion } from '../types';
 import { savePost, getAgents, getAstroAgents } from '../services/storage';
 import { generateBlogOutline, generateCourseStructure } from '../services/geminiService';
 import { fetchVideos } from '../services/youtubeService';
@@ -45,7 +45,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
       id: Math.random().toString(36).substr(2, 9),
       type,
       content,
-      meta: type === 'header' ? { level: 'h2', ...meta } : meta
+      meta: type === 'header' ? { level: 'h2', ...meta } : (type === 'quiz' ? { questions: [], ...meta } : meta)
     };
     setBlocks([...blocks, newBlock]);
   };
@@ -66,6 +66,34 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
     setBlocks(newBlocks);
+  };
+
+  // Quiz Editor Logic
+  const addQuestionToQuiz = (blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || !block.meta) return;
+    const questions = [...(block.meta.questions || [])];
+    questions.push({
+        question: "New Question",
+        options: ["Option 1", "Option 2"],
+        correctAnswerIndex: 0
+    });
+    updateBlock(blockId, block.content, { questions });
+  };
+
+  const updateQuizQuestion = (blockId: string, qIndex: number, field: keyof QuizQuestion, value: any) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || !block.meta) return;
+    const questions = [...(block.meta.questions || [])];
+    questions[qIndex] = { ...questions[qIndex], [field]: value };
+    updateBlock(blockId, block.content, { questions });
+  };
+
+  const removeQuestionFromQuiz = (blockId: string, qIndex: number) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || !block.meta) return;
+    const questions = block.meta.questions?.filter((_: any, i: number) => i !== qIndex);
+    updateBlock(blockId, block.content, { questions });
   };
 
   const handleMagicFetchVideos = async () => {
@@ -334,6 +362,129 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                                 </div>
                             </div>
                         )}
+                        {block.type === 'quiz' && (
+                            <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 shadow-inner space-y-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="p-2 bg-indigo-600 rounded-lg text-white"><ListChecks size={18} /></div>
+                                        <h4 className="text-sm font-black text-indigo-900 uppercase tracking-widest">Module Quiz</h4>
+                                    </div>
+                                    <button onClick={() => addQuestionToQuiz(block.id)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center bg-white px-3 py-1.5 rounded-full shadow-sm">
+                                        <Plus size={14} className="mr-1" /> Add Question
+                                    </button>
+                                </div>
+                                
+                                <div className="space-y-6">
+                                    {block.meta?.questions?.map((q: QuizQuestion, qIdx: number) => (
+                                        <div key={qIdx} className="bg-white p-6 rounded-2xl border border-indigo-100 shadow-sm relative group/q">
+                                            <button onClick={() => removeQuestionFromQuiz(block.id, qIdx)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
+                                                <Trash2 size={16} />
+                                            </button>
+                                            
+                                            <div className="mb-4">
+                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Question {qIdx + 1}</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={q.question} 
+                                                    onChange={(e) => updateQuizQuestion(block.id, qIdx, 'question', e.target.value)}
+                                                    className="w-full text-sm font-bold text-slate-900 border-b border-slate-100 focus:border-indigo-500 outline-none pb-1"
+                                                />
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Options & Answer</label>
+                                                {q.options.map((opt, oIdx) => (
+                                                    <div key={oIdx} className="flex items-center space-x-3">
+                                                        <input 
+                                                            type="radio" 
+                                                            name={`correct-${block.id}-${qIdx}`} 
+                                                            checked={q.correctAnswerIndex === oIdx} 
+                                                            onChange={() => updateQuizQuestion(block.id, qIdx, 'correctAnswerIndex', oIdx)}
+                                                            className="w-4 h-4 text-indigo-600"
+                                                        />
+                                                        <input 
+                                                            type="text" 
+                                                            value={opt} 
+                                                            onChange={(e) => {
+                                                                const newOptions = [...q.options];
+                                                                newOptions[oIdx] = e.target.value;
+                                                                updateQuizQuestion(block.id, qIdx, 'options', newOptions);
+                                                            }}
+                                                            className={`flex-grow text-xs px-3 py-2 rounded-lg border outline-none transition-all ${q.correctAnswerIndex === oIdx ? 'bg-indigo-50 border-indigo-200 text-indigo-900' : 'bg-slate-50 border-slate-100'}`}
+                                                        />
+                                                        {q.options.length > 2 && (
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const newOptions = q.options.filter((_, i) => i !== oIdx);
+                                                                    updateQuizQuestion(block.id, qIdx, 'options', newOptions);
+                                                                }}
+                                                                className="p-1.5 text-slate-300 hover:text-red-400"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <button 
+                                                    onClick={() => {
+                                                        const newOptions = [...q.options, `Option ${q.options.length + 1}`];
+                                                        updateQuizQuestion(block.id, qIdx, 'options', newOptions);
+                                                    }}
+                                                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-600 mt-2 flex items-center"
+                                                >
+                                                    <Plus size={10} className="mr-1" /> Add Option
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {block.type === 'embed' && (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center space-x-2 text-indigo-600">
+                                        <Code size={18} />
+                                        <span className="text-xs font-black uppercase tracking-widest">Custom Embed (Spotify, Iframe, etc)</span>
+                                    </div>
+                                </div>
+                                <textarea 
+                                    className="w-full font-mono text-xs bg-slate-900 text-emerald-400 rounded-xl px-4 py-4 border border-slate-700 h-32 focus:ring-2 focus:ring-indigo-500/20" 
+                                    value={block.meta?.html || ''} 
+                                    onChange={(e) => updateBlock(block.id, block.content, { html: e.target.value })} 
+                                    placeholder="Paste your embed code here (<iframe>...</iframe>)" 
+                                />
+                                <p className="text-[10px] text-slate-400 italic">This code will be rendered exactly as pasted in the live view.</p>
+                            </div>
+                        )}
+                        {block.type === 'pdf' && (
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-2 text-rose-600 mb-2">
+                                    <FileDown size={18} />
+                                    <span className="text-xs font-black uppercase tracking-widest">PDF Download Widget</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Button Label</label>
+                                        <input 
+                                            className="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500/20 outline-none" 
+                                            value={block.content} 
+                                            onChange={(e) => updateBlock(block.id, e.target.value)} 
+                                            placeholder="e.g. Download Course Guide" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">PDF URL</label>
+                                        <input 
+                                            className="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500/20 outline-none" 
+                                            value={block.meta?.url || ''} 
+                                            onChange={(e) => updateBlock(block.id, block.content, { url: e.target.value })} 
+                                            placeholder="https://example.com/file.pdf" 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ))}
 
@@ -343,6 +494,9 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                     <button onClick={() => addBlock('video')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-red-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Video size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Video</span></button>
                     <button onClick={() => addBlock('image')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Image size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Image</span></button>
                     <button onClick={() => setShowAgentModal(true)} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><UserCheck size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Expert</span></button>
+                    <button onClick={() => addBlock('quiz')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><ListChecks size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Quiz</span></button>
+                    <button onClick={() => addBlock('embed')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Code size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Embed</span></button>
+                    <button onClick={() => addBlock('pdf')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><FileDown size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">PDF</span></button>
                 </div>
             </div>
         </div>

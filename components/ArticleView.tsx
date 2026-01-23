@@ -1,10 +1,11 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Post, User, ContentBlock, VideoItem, Agent } from '../types';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Post, User, ContentBlock, VideoItem, Agent, QuizQuestion } from '../types';
 import { 
     ArrowLeft, Calendar, Clock, Share2, Lock, CheckCircle, ChevronRight, Star, 
     BookOpen, Check, Map, Lightbulb, ListChecks, PenTool, BrainCircuit, 
-    PlayCircle, X, Youtube, Twitter, Facebook, Linkedin, Link, MessageCircle, UserCheck, MessageSquare, Phone, AlertTriangle, Video
+    PlayCircle, X, Youtube, Twitter, Facebook, Linkedin, Link, MessageCircle, UserCheck, MessageSquare, Phone, AlertTriangle, Video, HelpCircle, ShieldCheck, FileDown, ExternalLink,
+    Play, Pause, Volume2, Music, Disc, Loader2
 } from 'lucide-react';
 import { ParallaxHeader, FadeIn, StaggerGrid, StaggerItem } from './Animated';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +23,292 @@ interface ArticleViewProps {
 
 const getYoutubeEmbedUrl = (videoId: string) => {
     return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+};
+
+const BACKGROUND_MUSIC_MAP: Record<string, string> = {
+    'lofi': 'https://archive.org/download/LofiHipHopFreeUse/Lofi%20Hip%20Hop%20-%20Free%20Use.mp3',
+    'ambient': 'https://archive.org/download/ambient-music-collection/Deep%20Space%20Atmosphere.mp3',
+    'romantic': 'https://archive.org/download/romantic-piano-music/Romantic%20Piano.mp3',
+    'inspirational': 'https://archive.org/download/inspirational-music-collection/Inspirational%20Journey.mp3'
+};
+
+const audioBufferCache: Record<string, AudioBuffer> = {};
+
+const resamplePCM = (dataInt16: Int16Array, fromRate: number, toRate: number): Float32Array => {
+    if (fromRate === toRate) {
+        const floatData = new Float32Array(dataInt16.length);
+        for (let i = 0; i < dataInt16.length; i++) {
+            floatData[i] = dataInt16[i] / 32768.0;
+        }
+        return floatData;
+    }
+    const ratio = fromRate / toRate;
+    const newLength = Math.round(dataInt16.length / ratio);
+    const result = new Float32Array(newLength);
+    for (let i = 0; i < newLength; i++) {
+        const position = i * ratio;
+        const idx = Math.floor(position);
+        const fraction = position - idx;
+        if (idx + 1 < dataInt16.length) {
+            const sample1 = dataInt16[idx] / 32768.0;
+            const sample2 = dataInt16[idx + 1] / 32768.0;
+            result[i] = sample1 + (sample2 - sample1) * fraction;
+        } else if (idx < dataInt16.length) {
+            result[i] = dataInt16[idx] / 32768.0;
+        }
+    }
+    return result;
+};
+
+const AudioBlockPlayer: React.FC<{ block: ContentBlock }> = ({ block }) => {
+    const { content: base64, meta } = block;
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const voiceSourceRef = useRef<AudioBufferSourceNode | null>(null);
+    const musicSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
+    const stopPlayback = () => {
+        try {
+            voiceSourceRef.current?.stop();
+            voiceSourceRef.current = null;
+            musicSourceRef.current?.stop();
+            musicSourceRef.current = null;
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+            }
+            audioContextRef.current = null;
+        } catch (e) {}
+        setIsPlaying(false);
+    };
+
+    const togglePlayback = async () => {
+        if (isPlaying) {
+            stopPlayback();
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            audioContextRef.current = ctx;
+            
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            const dataInt16 = new Int16Array(bytes.buffer, 0, Math.floor(len / 2));
+            const resampledVoice = resamplePCM(dataInt16, 24000, ctx.sampleRate);
+            const voiceBuffer = ctx.createBuffer(1, resampledVoice.length, ctx.sampleRate);
+            voiceBuffer.getChannelData(0).set(resampledVoice);
+            const voiceSource = ctx.createBufferSource();
+            voiceSource.buffer = voiceBuffer;
+
+            let musicBufferToPlay: AudioBuffer | null = null;
+            if (meta?.bgMusicTrack && BACKGROUND_MUSIC_MAP[meta.bgMusicTrack]) {
+                const trackUrl = BACKGROUND_MUSIC_MAP[meta.bgMusicTrack];
+                try {
+                    if (audioBufferCache[trackUrl]) {
+                        musicBufferToPlay = audioBufferCache[trackUrl];
+                    } else {
+                        const response = await fetch(trackUrl, { 
+                          method: 'GET',
+                          mode: 'cors',
+                          credentials: 'omit'
+                        });
+                        if (!response.ok) throw new Error(`Music fetch failed: ${response.status}`);
+                        const musicArrayBuffer = await response.arrayBuffer();
+                        musicBufferToPlay = await ctx.decodeAudioData(musicArrayBuffer);
+                        audioBufferCache[trackUrl] = musicBufferToPlay;
+                    }
+                } catch (musicErr) {
+                    console.warn("Background music failed to load/decode, playing narration only", musicErr);
+                }
+            }
+
+            if (musicBufferToPlay) {
+                const musicSource = ctx.createBufferSource();
+                musicSource.buffer = musicBufferToPlay;
+                musicSource.loop = true;
+                const musicGain = ctx.createGain();
+                musicGain.gain.value = meta?.bgMusicVolume || 0.15;
+                musicSource.connect(musicGain);
+                musicGain.connect(ctx.destination);
+                musicSourceRef.current = musicSource;
+                musicSource.start(0);
+            }
+
+            voiceSource.connect(ctx.destination);
+            voiceSource.onended = () => {
+                try { musicSourceRef.current?.stop(); } catch (e) {}
+                setIsPlaying(false);
+            };
+            
+            voiceSourceRef.current = voiceSource;
+            voiceSource.start(0);
+            setIsPlaying(true);
+        } catch (e) {
+            console.error("Audio playback engine failed:", e);
+            alert("The audio production failed to start. Ensure your browser is not blocking audio.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        return () => stopPlayback();
+    }, []);
+
+    return (
+        <div className="my-10 p-8 bg-gradient-to-br from-rose-500 via-rose-600 to-indigo-600 rounded-[2.5rem] text-white shadow-2xl shadow-rose-900/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                <Disc size={120} className={isPlaying ? 'animate-spin-slow' : ''} />
+            </div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+                <button 
+                    onClick={togglePlayback}
+                    disabled={isLoading}
+                    className="w-20 h-20 bg-white text-rose-600 rounded-full flex items-center justify-center shadow-xl hover:scale-105 transition-all active:scale-95 flex-shrink-0 disabled:opacity-50"
+                >
+                    {isLoading ? (
+                        <Loader2 className="animate-spin" size={32} />
+                    ) : (
+                        isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} className="ml-1" fill="currentColor" />
+                    )}
+                </button>
+                
+                <div className="text-center md:text-left flex-grow">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-100 mb-1">Amour Produced Audio</div>
+                    <h4 className="text-2xl font-serif font-bold mb-2">{meta?.audioTitle || 'AI Narration'}</h4>
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-rose-200">
+                        <div className="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1 rounded-full border border-white/10">
+                            <Volume2 size={12} />
+                            <span className="text-[10px] font-bold uppercase">{meta?.voiceName || 'Synthesis'}</span>
+                        </div>
+                        {meta?.bgMusicTrack && (
+                            <div className="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1 rounded-full border border-white/10">
+                                <Music size={12} />
+                                <span className="text-[10px] font-bold uppercase">Atmosphere: {meta.bgMusicTrack}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="hidden md:flex items-center space-x-2 h-12">
+                    {[...Array(12)].map((_, i) => (
+                        <motion.div 
+                            key={i}
+                            animate={isPlaying ? { height: [8, 24, 12, 32, 16, 8] } : { height: 4 }}
+                            transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.1 }}
+                            className="w-1 bg-white/40 rounded-full"
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ... Rest of the file unchanged ...
+
+// Interactive Quiz Component
+const QuizRunner: React.FC<{ questions: QuizQuestion[], onPass: () => void }> = ({ questions, onPass }) => {
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
+    const [results, setResults] = useState<{ idx: number, correct: boolean }[]>([]);
+    const [isFinished, setIsFinished] = useState(false);
+
+    const handleAnswer = () => {
+        if (selectedOpt === null) return;
+        const correct = selectedOpt === questions[currentIdx].correctAnswerIndex;
+        const newResults = [...results, { idx: currentIdx, correct }];
+        setResults(newResults);
+
+        if (currentIdx < questions.length - 1) {
+            setCurrentIdx(currentIdx + 1);
+            setSelectedOpt(null);
+        } else {
+            setIsFinished(true);
+        }
+    };
+
+    const passCount = results.filter(r => r.correct).length;
+    const isPassed = isFinished && passCount === questions.length;
+
+    if (questions.length === 0) return null;
+
+    if (isFinished) {
+        return (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="my-12 p-10 bg-white border border-indigo-100 rounded-[2.5rem] shadow-xl text-center">
+                <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg ${isPassed ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-50'}`}>
+                    {isPassed ? <ShieldCheck size={40} /> : <AlertTriangle size={40} />}
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">
+                    {isPassed ? "Module Mastered!" : "Almost There"}
+                </h3>
+                <p className="text-slate-500 mb-8">You got {passCount} out of {questions.length} correct.</p>
+                
+                {isPassed ? (
+                    <button 
+                        onClick={onPass}
+                        className="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/10"
+                    >
+                        Mark Module as Complete
+                    </button>
+                ) : (
+                    <button 
+                        onClick={() => { setCurrentIdx(0); setResults([]); setIsFinished(false); setSelectedOpt(null); }}
+                        className="bg-slate-900 text-white px-10 py-4 rounded-full font-bold hover:bg-slate-800 transition-all shadow-xl"
+                    >
+                        Retake Quiz
+                    </button>
+                )}
+            </motion.div>
+        );
+    }
+
+    const currentQ = questions[currentIdx];
+
+    return (
+        <div className="my-12 p-8 bg-indigo-50/50 border border-indigo-100 rounded-[2.5rem] shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-3">
+                    <div className="bg-indigo-600 p-2.5 rounded-xl text-white shadow-md"><HelpCircle size={20} /></div>
+                    <div>
+                        <h4 className="text-xs font-black text-indigo-900 uppercase tracking-widest">Question {currentIdx + 1}/{questions.length}</h4>
+                        <p className="text-xs text-indigo-400 font-bold">Passing required to unlock next module</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 className="text-xl font-serif font-bold text-slate-900 mb-8">{currentQ.question}</h3>
+            
+            <div className="space-y-3 mb-10">
+                {currentQ.options.map((opt, i) => (
+                    <button 
+                        key={i}
+                        onClick={() => setSelectedOpt(i)}
+                        className={`w-full text-left p-5 rounded-2xl border-2 transition-all font-medium ${selectedOpt === i ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'}`}
+                    >
+                        {opt}
+                    </button>
+                ))}
+            </div>
+
+            <button 
+                onClick={handleAnswer}
+                disabled={selectedOpt === null}
+                className="w-full py-4 bg-slate-900 text-white rounded-full font-bold shadow-xl shadow-slate-900/10 hover:bg-slate-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+                Confirm Answer
+            </button>
+        </div>
+    );
 };
 
 // Expert Embed Component - Supports complete AI interactive experience
@@ -241,6 +528,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
   const isCourse = post.type === 'course';
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+  const [quizPassedInSection, setQuizPassedInSection] = useState<Record<number, boolean>>({});
 
   // Group blocks for courses logic
   const courseSections = useMemo(() => {
@@ -248,7 +536,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
     const sections: ContentBlock[][] = [];
     let currentSection: ContentBlock[] = [];
     post.blocks.forEach((block) => {
-        const isModuleHeader = block.type === 'header' && (block.content.includes('Week') || block.content.includes('Module') || block.content.includes('Conclusion'));
+        const isModuleHeader = block.type === 'header' && (block.content.includes('Week') || block.content.includes('Module') || block.content.includes('Conclusion') || block.content.includes('Introduction'));
         if (isModuleHeader && currentSection.length > 0) {
             sections.push(currentSection);
             currentSection = [];
@@ -282,7 +570,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
       localStorage.setItem(`amour_progress_${post.id}`, next.toString());
       setTimeout(() => {
           const nextEl = document.getElementById(`section-${next}`);
-          if (nextEl) nextEl.scrollIntoView({ behavior: 'smooth' });
+          if (nextEl) nextEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
   };
 
@@ -331,6 +619,9 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
 
       <article className="max-w-3xl mx-auto px-6 py-16">
         {courseSections.map((section, sectionIndex) => {
+            // Strict Gating Logic: Hide future sections
+            if (isCourse && sectionIndex > completedSections) return null;
+
             if (!hasAccess && post.isPremium && sectionIndex > 0) {
                 if (sectionIndex === 1) {
                     return (
@@ -348,6 +639,9 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                 }
                 return null;
             }
+
+            const hasQuiz = section.some(b => b.type === 'quiz' && b.meta?.questions && b.meta.questions.length > 0);
+            const canAdvance = !hasQuiz || quizPassedInSection[sectionIndex];
 
             return (
                 <div key={sectionIndex} id={`section-${sectionIndex}`} className="mb-20 scroll-mt-40">
@@ -396,11 +690,67 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                                 );
                             case 'agent':
                                 return <FadeIn key={block.id}><ExpertEmbed agentIdOrSlug={block.meta?.agentId || ''} /></FadeIn>;
+                            case 'quiz':
+                                return (
+                                    <FadeIn key={block.id}>
+                                        {quizPassedInSection[sectionIndex] ? (
+                                            <div className="my-12 p-8 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex items-center shadow-inner">
+                                                <div className="p-3 bg-white rounded-xl mr-4 shadow-sm text-emerald-500"><CheckCircle size={24} /></div>
+                                                <div>
+                                                    <span className="font-bold text-slate-900 block">Assessment Passed</span>
+                                                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">You have successfully mastered this material.</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <QuizRunner 
+                                                questions={block.meta?.questions || []} 
+                                                onPass={() => setQuizPassedInSection(prev => ({ ...prev, [sectionIndex]: true }))} 
+                                            />
+                                        )}
+                                    </FadeIn>
+                                );
+                            case 'embed':
+                                return (
+                                    <FadeIn key={block.id} className="my-12 flex justify-center">
+                                        <div 
+                                            className="w-full overflow-hidden flex justify-center"
+                                            dangerouslySetInnerHTML={{ __html: block.meta?.html || '' }} 
+                                        />
+                                    </FadeIn>
+                                );
+                            case 'pdf':
+                                return (
+                                    <FadeIn key={block.id} className="my-12">
+                                        <a 
+                                            href={block.meta?.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-between p-6 bg-rose-50 border border-rose-100 rounded-2xl hover:bg-rose-100 transition-all group"
+                                        >
+                                            <div className="flex items-center space-x-4">
+                                                <div className="p-3 bg-white rounded-xl text-rose-600 shadow-sm group-hover:scale-110 transition-transform">
+                                                    <FileDown size={24} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-slate-900">{block.content || 'Download Resource'}</div>
+                                                    <div className="text-[10px] text-rose-500 font-black uppercase tracking-widest">PDF Document</div>
+                                                </div>
+                                            </div>
+                                            <ExternalLink size={20} className="text-rose-300" />
+                                        </a>
+                                    </FadeIn>
+                                );
+                            case 'audio':
+                                return (
+                                    <FadeIn key={block.id}>
+                                        <AudioBlockPlayer block={block} />
+                                    </FadeIn>
+                                );
                             default: return null;
                         }
                     })}
 
-                    {isCourse && hasAccess && sectionIndex === completedSections && sectionIndex < courseSections.length - 1 && (
+                    {isCourse && hasAccess && sectionIndex === completedSections && sectionIndex < courseSections.length - 1 && canAdvance && (
                         <FadeIn className="mt-16 p-12 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 flex flex-col items-center text-center shadow-lg shadow-emerald-900/5">
                              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 text-emerald-600 shadow-sm">
                                  <CheckCircle size={32} />
@@ -472,7 +822,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
         </div>
       </article>
 
-      {/* Video Modal Overlay */}
+      {/* Video Modal Overlay ... */}
       <AnimatePresence>
         {selectedVideo && (
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-10" onClick={() => setSelectedVideo(null)}>

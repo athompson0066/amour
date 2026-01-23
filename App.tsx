@@ -10,6 +10,7 @@ import AdminSettings from './components/AdminSettings';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAgentWorkspace from './components/AdminAgentWorkspace';
 import AdminPriceStrategy from './components/AdminPriceStrategy';
+import AdminAudioStudio from './components/AdminAudioStudio';
 import AdminLogin from './components/AdminLogin';
 import AgentCard from './components/AgentCard';
 import ChatInterface from './components/ChatInterface';
@@ -403,6 +404,7 @@ const App: React.FC = () => {
           onDeleteAgent={handleDeleteAgent}
           onGoToWorkspace={() => setCurrentView('admin-agents')}
           onGoToPricing={() => setCurrentView('admin-pricing')}
+          onGoToAudioStudio={() => setCurrentView('admin-audio-studio')}
           onSettings={() => setCurrentView('admin-settings')}
         />
       )}
@@ -423,6 +425,7 @@ const App: React.FC = () => {
       {currentView === 'admin-settings' && <AdminSettings onCancel={() => setCurrentView('admin-dashboard')} />}
       {currentView === 'admin-agents' && <AdminAgentWorkspace onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
       {currentView === 'admin-pricing' && <AdminPriceStrategy onBack={() => setCurrentView('admin-dashboard')} onRefresh={refreshData} />}
+      {currentView === 'admin-audio-studio' && <AdminAudioStudio onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
       {currentView === 'library' && (
         <div className="max-w-7xl mx-auto px-4 py-20">
           <FadeIn className="text-center mb-16">

@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { ContentType, Post, Agent } from '../types';
 
 /**
@@ -15,6 +15,18 @@ const getAI = () => {
  */
 const cleanJsonString = (str: string): string => {
   return str.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
+/**
+ * Generic error handler for Gemini API calls to catch quota issues
+ */
+const handleGeminiError = (error: any): string => {
+    console.error("Gemini API Error:", error);
+    const message = error?.message || String(error);
+    if (message.includes("429") || message.toLowerCase().includes("quota")) {
+        return "ERROR: Quota Exceeded. Please try again in a minute or check your billing status in Google AI Studio.";
+    }
+    return `ERROR: ${message}`;
 };
 
 export const generateSoulmateSketch = async (data: any): Promise<string | null> => {
@@ -80,13 +92,97 @@ export const generateSoulmateSketch = async (data: any): Promise<string | null> 
   }
 };
 
+export const generateNarration = async (text: string, voices: {name: string, label: string}[], personaPrompt: string): Promise<string | null> => {
+  try {
+    const ai = getAI();
+    const isMultiSpeaker = voices.length > 1;
+    
+    const prompt = isMultiSpeaker 
+      ? `TTS the following conversation between ${voices[0].label} and ${voices[1].label}. 
+         Persona Style: ${personaPrompt}. 
+         Ensure the voices match the roles accurately.
+         Script:
+         ${text}`
+      : `Persona Style: ${personaPrompt}\n\nNarrate the following text with this exact style:\n${text}`;
+    
+    const config: any = {
+      responseModalities: [Modality.AUDIO],
+    };
+
+    if (isMultiSpeaker) {
+      config.speechConfig = {
+        multiSpeakerVoiceConfig: {
+          speakerVoiceConfigs: [
+            {
+              speaker: voices[0].label.split(' ')[0],
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: voices[0].name } }
+            },
+            {
+              speaker: voices[1].label.split(' ')[0],
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: voices[1].name } }
+            }
+          ]
+        }
+      };
+    } else {
+      config.speechConfig = {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName: voices[0].name },
+        },
+      };
+    }
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ parts: [{ text: prompt }] }],
+      config,
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) throw new Error("No audio data returned from API.");
+    return base64Audio;
+  } catch (error: any) {
+    return handleGeminiError(error);
+  }
+};
+
+/**
+ * Switching to gemini-3-flash-preview to maximize free-tier quota and speed.
+ */
+export const runAudioCrewMission = async (title: string, isDuo: boolean, persona: string, instructions: string): Promise<string> => {
+    try {
+        const ai = getAI();
+        const prompt = `You are a team of expert Audio Producers. 
+        Objective: Create a high-quality ${isDuo ? 'dialogue script for a duo' : 'monologue script'} for an audio podcast/blog.
+        Title: "${title}"
+        Narrator Persona: ${persona}
+        Custom Instructions: ${instructions || 'No special instructions provided.'}
+        
+        ${isDuo ? 'FORMAT: SpeakerA: [text] SpeakerB: [text]. Use exactly these labels for the speakers.' : 'FORMAT: Continuous narrative.'}
+        
+        Style: Conversational, engaging, and professional. Keep it under 250 words.`;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+        });
+        
+        return response.text || "Communication failed: No content returned.";
+    } catch (error: any) {
+        return handleGeminiError(error);
+    }
+};
+
+/**
+ * Switching to gemini-3-flash-preview to maximize free-tier quota and speed.
+ */
 export const runCrewMission = async (topic: string, type: ContentType, instructions?: string, featureImageUrl?: string, isPremium: boolean = false, price: number = 0, videoCount: number = 0): Promise<any> => {
   try {
     const ai = getAI();
     const prompt = `Create a high-quality ${type} about ${topic}. Instructions: ${instructions || 'Be thorough and empathetic.'}`;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { 
         responseMimeType: "application/json",
@@ -125,9 +221,10 @@ export const runCrewMission = async (topic: string, type: ContentType, instructi
     });
 
     return JSON.parse(cleanJsonString(response.text || '{}'));
-  } catch (error) {
+  } catch (error: any) {
     console.error("Crew Mission Failed:", error);
-    throw error;
+    // Returning error object if JSON requested
+    return { title: "Error", subtitle: handleGeminiError(error), blocks: [] };
   }
 };
 
@@ -239,38 +336,37 @@ export const getAgentChatResponse = async (agent: Agent, userMessage: string, hi
     if (isSearchEnabled) {
       tools.push({ googleSearch: {} });
       
-      // If specific scraping sites are provided, inject guidance into system instructions
       if (agent.tools?.webScraping && agent.tools?.targetWebsites && agent.tools?.targetWebsites.length > 0) {
         const siteConstraint = agent.tools.targetWebsites.map(s => `site:${s}`).join(' OR ');
         systemInstruction += `\n\n[KNOWLEDGE SOURCE CONSTRAINT]: You have access to a web search tool. For the most accurate and on-brand information, you MUST prioritize and emphasize data from the following websites: ${agent.tools.targetWebsites.join(', ')}. If relevant, focus your internal queries using constraints like "${siteConstraint}".`;
       }
     }
 
-    // Google Drive Knowledge Base Integration
     if (agent.tools?.googleDriveEnabled && agent.tools?.googleDriveLinks && agent.tools?.googleDriveLinks.length > 0) {
       systemInstruction += `\n\n[AUTHORITATIVE KNOWLEDGE BASE]: You are provided with access to the following Google Drive resources which contain your core teachings, methodologies, and proprietary data: ${agent.tools.googleDriveLinks.join(', ')}. Use the information within these documents as your primary source of truth. If you need to cite a source, refer to it as 'Internal Archives'.`;
     }
 
-    // Config with Thinking Budget if present
     const config: any = { 
       systemInstruction,
       tools: tools.length > 0 ? tools : undefined
     };
+
+    // Note: Thinking configuration usually triggers Pro model, so we only use Pro if budget explicitly set
+    const model = (agent.thinkingBudget && agent.thinkingBudget > 0) ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
 
     if (agent.thinkingBudget && agent.thinkingBudget > 0) {
       config.thinkingConfig = { thinkingBudget: agent.thinkingBudget };
     }
 
     const chat = ai.chats.create({ 
-      model: agent.thinkingBudget ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview', 
+      model, 
       config,
       history: history.map(h => ({ role: h.role, parts: [{ text: h.text }] })) 
     });
     
     const result = await chat.sendMessage({ message: userMessage });
     return result.text || "I am listening.";
-  } catch (error) {
-    console.error("Chat Error:", error);
-    return "Connection error.";
+  } catch (error: any) {
+    return handleGeminiError(error);
   }
 };

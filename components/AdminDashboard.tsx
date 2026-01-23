@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Post, ContentType, Agent } from '../types';
 import { isSupabaseConfigured } from '../config';
-import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check } from 'lucide-react';
+import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check, Mic2 } from 'lucide-react';
 import { FadeIn } from './Animated';
 
 interface AdminDashboardProps {
@@ -19,6 +19,7 @@ interface AdminDashboardProps {
   onView: (post: Post) => void;
   onGoToWorkspace?: () => void;
   onGoToPricing?: () => void;
+  onGoToAudioStudio?: () => void;
   onSettings?: () => void;
 }
 
@@ -36,6 +37,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onView, 
   onGoToWorkspace, 
   onGoToPricing, 
+  onGoToAudioStudio,
   onSettings 
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -121,6 +123,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <div className="flex flex-wrap gap-3">
               <button onClick={onSettings} className="bg-slate-100 text-slate-700 px-5 py-3 rounded-full font-medium hover:bg-slate-200 transition-all flex items-center border border-slate-200"><Settings size={18} className="mr-2" /> API Settings</button>
+              <button onClick={onGoToAudioStudio} className="bg-rose-50 text-rose-700 px-5 py-3 rounded-full font-medium hover:bg-rose-100 transition-all flex items-center border border-rose-100"><Mic2 size={18} className="mr-2" /> Voice Studio</button>
               <button onClick={onGoToPricing} className="bg-amber-100 text-amber-700 px-5 py-3 rounded-full font-medium hover:bg-amber-200 transition-all flex items-center border border-amber-200"><CircleDollarSign size={18} className="mr-2" /> Price Strategy</button>
               <button onClick={onGoToWorkspace} className="bg-indigo-600 text-white px-5 py-3 rounded-full font-medium hover:bg-indigo-700 shadow-lg transition-all flex items-center group"><BrainCircuit size={18} className="mr-2 group-hover:rotate-12 transition-transform" /> Agent Workspace</button>
               <button 
@@ -300,7 +303,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <th className="px-6 py-4">Expert Name</th>
                                 <th className="px-6 py-4">Specialization</th>
                                 <th className="px-6 py-4">Rate</th>
-                                <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -317,12 +319,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600 font-medium">{agent.role}</td>
                                     <td className="px-6 py-4 text-sm text-amber-700 font-bold">{agent.price}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center">
-                                            <div className={`w-2 h-2 rounded-full mr-2 ${agent.isOnline ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></div>
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{agent.isOnline ? 'Online' : 'Offline'}</span>
-                                        </div>
-                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         {deleteConfirm === agent.id ? (
                                             <div className="flex items-center justify-end space-x-2 animate-in fade-in slide-in-from-right-4 duration-200">

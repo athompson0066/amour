@@ -11,9 +11,15 @@ export type ContentType =
   | 'ebook'
   | 'sketch';
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswerIndex: number;
+}
+
 export interface ContentBlock {
   id: string;
-  type: 'text' | 'image' | 'header' | 'quote' | 'cta' | 'agent' | 'video';
+  type: 'text' | 'image' | 'header' | 'quote' | 'cta' | 'agent' | 'video' | 'quiz' | 'embed' | 'pdf' | 'audio';
   content: string;
   meta?: {
     url?: string;
@@ -21,6 +27,13 @@ export interface ContentBlock {
     level?: 'h2' | 'h3';
     agentId?: string; // Reference to an expert ID
     videoId?: string; // YouTube video ID for video blocks
+    questions?: QuizQuestion[]; // For quiz blocks
+    html?: string; // For embed blocks (Spotify, etc)
+    fileName?: string; // For PDF blocks
+    audioTitle?: string;
+    voiceName?: string;
+    bgMusicTrack?: string;
+    bgMusicVolume?: number;
   };
 }
 
