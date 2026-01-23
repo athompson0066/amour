@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, LayoutDashboard, Menu, X, BookOpen, Settings, ShieldCheck } from 'lucide-react';
+import { Heart, LayoutDashboard, Menu, X, BookOpen, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { User } from '../types';
 
 interface LayoutProps {
@@ -8,7 +8,9 @@ interface LayoutProps {
   currentView: string;
   onChangeView: (view: string) => void;
   isAdmin: boolean;
+  isAdminAuthenticated: boolean;
   toggleAdmin: () => void;
+  onAdminLogout: () => void;
   user: User | null;
   onLoginClick: () => void;
   onLogoutClick: () => void;
@@ -19,7 +21,9 @@ const Layout: React.FC<LayoutProps> = ({
   currentView, 
   onChangeView, 
   isAdmin, 
+  isAdminAuthenticated,
   toggleAdmin,
+  onAdminLogout,
   user
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -72,18 +76,31 @@ const Layout: React.FC<LayoutProps> = ({
             </div>
 
             <div className="hidden md:flex items-center space-x-3">
-              <button 
-                onClick={toggleAdmin}
-                title={isAdmin ? "Exit Admin Mode" : "Enter Admin Mode"}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all ${
-                  isAdmin 
-                    ? 'bg-slate-900 text-white shadow-xl ring-2 ring-rose-500' 
-                    : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
-                }`}
-              >
-                {isAdmin ? <LayoutDashboard size={18} /> : <ShieldCheck size={18} />}
-                {isAdmin && <span className="text-xs font-bold uppercase tracking-widest">Admin</span>}
-              </button>
+              <div className="flex items-center bg-slate-100/50 rounded-full px-1 py-1 border border-slate-200/50">
+                  <button 
+                    onClick={toggleAdmin}
+                    title={isAdmin ? "Exit Admin Mode" : "Admin Portal"}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all ${
+                      isAdmin 
+                        ? 'bg-slate-900 text-white shadow-xl ring-2 ring-rose-500' 
+                        : isAdminAuthenticated
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                    }`}
+                  >
+                    {isAdmin ? <LayoutDashboard size={18} /> : isAdminAuthenticated ? <ShieldCheck size={18} /> : <ShieldCheck size={18} />}
+                    {(isAdmin || isAdminAuthenticated) && <span className="text-[10px] font-black uppercase tracking-widest">{isAdmin ? 'Dashboard' : 'Admin'}</span>}
+                  </button>
+                  {isAdminAuthenticated && (
+                      <button 
+                        onClick={onAdminLogout}
+                        title="Logout Admin"
+                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <LogOut size={16} />
+                      </button>
+                  )}
+              </div>
             </div>
 
             <div className="lg:hidden flex items-center">
@@ -101,10 +118,17 @@ const Layout: React.FC<LayoutProps> = ({
                        {view.replace('-', ' ')}
                    </button>
                ))}
-               <div className="border-t border-slate-100 pt-2">
-                  <button onClick={() => { toggleAdmin(); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 text-slate-600 font-bold hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
-                     {isAdmin ? 'Exit Admin Dashboard' : 'Admin Access'}
+               <div className="border-t border-slate-100 pt-2 space-y-1">
+                  <button onClick={() => { toggleAdmin(); setMobileMenuOpen(false); }} className={`block w-full text-left px-4 py-3 font-bold hover:bg-rose-50 rounded-xl transition-colors flex items-center justify-between ${isAdmin ? 'text-rose-600' : 'text-slate-600'}`}>
+                     <span>{isAdmin ? 'Exit Dashboard' : isAdminAuthenticated ? 'Admin Dashboard' : 'Admin Access'}</span>
+                     <ShieldCheck size={18} className={isAdminAuthenticated ? 'text-emerald-500' : 'text-slate-300'} />
                   </button>
+                  {isAdminAuthenticated && (
+                      <button onClick={() => { onAdminLogout(); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors flex items-center justify-between">
+                         <span>Logout Admin</span>
+                         <LogOut size={18} />
+                      </button>
+                  )}
                </div>
              </div>
            </div>

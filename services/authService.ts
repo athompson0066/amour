@@ -2,6 +2,13 @@
 import { User } from '../types';
 
 const GUEST_STORAGE_KEY = 'amour_guest_session';
+const ADMIN_AUTH_KEY = 'amour_admin_auth';
+
+// The specified admin credentials
+const ADMIN_CREDENTIALS = {
+    username: 'athompson',
+    password: 'Beachzipper66$'
+};
 
 const createInitialGuest = (): User => ({
   id: 'guest_' + Math.random().toString(36).substr(2, 9),
@@ -26,8 +33,47 @@ export const getCurrentUser = async (): Promise<User | null> => {
   return newUser;
 };
 
+/**
+ * Admin Authentication Logic
+ */
+export const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
+    // Artificial delay for security/UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify({
+            authenticated: true,
+            timestamp: Date.now(),
+            user: username
+        }));
+        return true;
+    }
+    return false;
+};
+
+export const isAdminAuthenticated = (): boolean => {
+    const stored = localStorage.getItem(ADMIN_AUTH_KEY);
+    if (!stored) return false;
+    
+    try {
+        const auth = JSON.parse(stored);
+        // Sessions expire after 24 hours
+        const isExpired = Date.now() - auth.timestamp > 24 * 60 * 60 * 1000;
+        if (isExpired) {
+            localStorage.removeItem(ADMIN_AUTH_KEY);
+            return false;
+        }
+        return auth.authenticated;
+    } catch (e) {
+        return false;
+    }
+};
+
+export const logoutAdmin = () => {
+    localStorage.removeItem(ADMIN_AUTH_KEY);
+};
+
 export const login = async (email: string): Promise<User | null> => {
-  // Bypassed: Users don't need to log in anymore
   return getCurrentUser();
 };
 
@@ -42,6 +88,5 @@ export const updateUser = async (user: User): Promise<void> => {
 };
 
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
-    // Return empty unsubscribe
     return () => {};
 };

@@ -1,4 +1,3 @@
-
 import { config } from '../config';
 
 /**
@@ -46,6 +45,8 @@ export const loadPayPalScript = async (): Promise<any> => {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.id = scriptId;
+    script.crossOrigin = 'anonymous'; // Important for capturing detailed script errors
+    
     // Adding attributes to help the SDK identify the integration source and bypass some host restrictions
     script.setAttribute('data-sdk-integration-source', 'button-factory');
     script.setAttribute('data-namespace', 'paypal_sdk');
@@ -81,7 +82,7 @@ export const loadPayPalScript = async (): Promise<any> => {
 
     script.onerror = () => {
       clearTimeout(timeout);
-      reject(new Error("Failed to load PayPal. Many preview environments block external payment scripts for security. Use 'Simulate Payment' below to test the app flow."));
+      reject(new Error("Failed to load PayPal. Preview environments often block external payment scripts. Please use 'Simulate Payment' to test the application flow."));
     };
 
     document.body.appendChild(script);

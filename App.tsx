@@ -10,6 +10,7 @@ import AdminSettings from './components/AdminSettings';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAgentWorkspace from './components/AdminAgentWorkspace';
 import AdminPriceStrategy from './components/AdminPriceStrategy';
+import AdminLogin from './components/AdminLogin';
 import AgentCard from './components/AgentCard';
 import ChatInterface from './components/ChatInterface';
 import VoiceInterface from './components/VoiceInterface';
@@ -21,7 +22,7 @@ import Hero from './components/Hero';
 import { FadeIn, StaggerGrid, StaggerItem } from './components/Animated';
 import { Post, ContentType, Agent, User } from './types';
 import { getPosts, getAgents, getAstroAgents, deletePost as storageDeletePost, deleteAgent as storageDeleteAgent } from './services/storage';
-import { getCurrentUser, updateUser } from './services/authService';
+import { getCurrentUser, updateUser, isAdminAuthenticated, logoutAdmin } from './services/authService';
 import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -30,7 +31,8 @@ const App: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [pendingPaymentItem, setPendingPaymentItem] = useState<Post | Agent | null>(null);
   
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [astroAgents, setAstroAgents] = useState<Agent[]>([]);
@@ -46,6 +48,7 @@ const App: React.FC = () => {
     const initUser = async () => {
         const guest = await getCurrentUser();
         setUser(guest);
+        setIsAdminAuth(isAdminAuthenticated());
     };
     initUser();
   }, []);
@@ -62,13 +65,30 @@ const App: React.FC = () => {
   };
 
   const handleToggleAdmin = () => {
-    const nextAdminState = !isAdmin;
-    setIsAdmin(nextAdminState);
-    if (nextAdminState) {
-      setCurrentView('admin-dashboard');
-    } else {
+    if (isAdminMode) {
+      setIsAdminMode(false);
       setCurrentView('home');
+    } else {
+      if (isAdminAuth) {
+        setIsAdminMode(true);
+        setCurrentView('admin-dashboard');
+      } else {
+        setCurrentView('admin-login');
+      }
     }
+  };
+
+  const handleAdminAuthSuccess = () => {
+    setIsAdminAuth(true);
+    setIsAdminMode(true);
+    setCurrentView('admin-dashboard');
+  };
+
+  const handleAdminLogout = () => {
+    logoutAdmin();
+    setIsAdminAuth(false);
+    setIsAdminMode(false);
+    setCurrentView('home');
   };
 
   const checkAccess = (id: string, isPremium: boolean): boolean => {
@@ -187,8 +207,10 @@ const App: React.FC = () => {
     <Layout 
         currentView={currentView} 
         onChangeView={setCurrentView} 
-        isAdmin={isAdmin}
+        isAdmin={isAdminMode}
+        isAdminAuthenticated={isAdminAuth}
         toggleAdmin={handleToggleAdmin}
+        onAdminLogout={handleAdminLogout}
         user={user}
         onLoginClick={() => {}} 
         onLogoutClick={() => {}}
@@ -344,6 +366,7 @@ const App: React.FC = () => {
             onLoginRequest={() => {}} 
         />
       )}
+      {currentView === 'admin-login' && <AdminLogin onSuccess={handleAdminAuthSuccess} onCancel={() => setCurrentView('home')} />}
       {currentView === 'admin-dashboard' && (
         <AdminDashboard 
           posts={posts}

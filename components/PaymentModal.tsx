@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { X, CheckCircle, ShieldCheck, AlertCircle, Loader2, Lock, RefreshCw, Sparkles } from 'lucide-react';
 import { Post, User, Agent } from '../types';
@@ -62,11 +61,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
            setTimeout(() => onSuccess(), 1500);
         },
         onError: (err: any) => {
-          console.error('PayPal Button Error:', err);
-          setError("PayPal could not initialize. This is often due to browser security settings in preview environments. You can use 'Simulate' below to test the app features.");
+          console.error('PayPal SDK Error:', err);
+          const msg = err?.message || String(err);
+          if (msg.toLowerCase().includes('window host') || msg.toLowerCase().includes('location')) {
+              setError("PayPal restriction: The payment SDK cannot access the host window from this framed environment. Please use 'Simulate' to test the app features.");
+          } else {
+              setError("PayPal could not initialize. This is often due to browser security settings in preview environments.");
+          }
+          setLoading(false);
         },
         onCancel: () => {
           setError("Payment was cancelled.");
+          setLoading(false);
         }
       }).render(paypalContainerRef.current);
       
@@ -75,7 +81,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
 
     } catch (err: any) {
       console.error("PayPal Initialization Error:", err);
-      setError(err.message || "Connection to PayPal failed.");
+      const msg = err.message || "Connection to PayPal failed.";
+      setError(msg);
       setLoading(false);
     }
   };
@@ -138,10 +145,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
                 <div className="mb-6 p-4 bg-rose-50 text-rose-700 text-sm rounded-xl border border-rose-100 flex flex-col items-center">
                     <div className="flex items-center mb-3">
                         <AlertCircle size={18} className="mr-2 flex-shrink-0" />
-                        <span className="font-bold">System Environment Restriction</span>
+                        <span className="font-bold">System Restriction</span>
                     </div>
                     <p className="text-center mb-4 leading-relaxed text-xs">
-                        {error.includes('host') ? "Third-party payment scripts are being blocked by the host security policy." : error}
+                        {error}
                     </p>
                     <div className="grid grid-cols-2 gap-2 w-full">
                         <button 
@@ -163,7 +170,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
             )}
 
             <div className="min-h-[150px] relative">
-                {loading && (
+                {loading && !error && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 backdrop-blur-sm rounded-xl">
                         <div className="text-center">
                             <Loader2 className="animate-spin text-blue-600 mx-auto mb-2" size={32} />
