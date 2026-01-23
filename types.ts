@@ -48,19 +48,32 @@ export interface Post {
   relatedVideos?: VideoItem[]; // Added for YouTube integration
 }
 
+export interface AgentTools {
+  googleSearch?: boolean;
+  vision?: boolean;
+  codeExecution?: boolean;
+  webScraping?: boolean; 
+  targetWebsites?: string[];
+  googleDriveEnabled?: boolean; 
+  googleDriveLinks?: string[];
+}
+
 export interface Agent {
   id: string;
   name: string;
   role: string;
+  category: 'relationship' | 'astro'; // New: Determines which council the agent belongs to
   avatar: string;
   description: string;
-  systemInstruction?: string; // Custom AI behavior instructions
-  embedCode?: string; // Optional custom HTML/JS embed snippet
-  price: string; // Display string e.g. "$2.99/min"
-  priceValue?: number; // Numerical value for payment processing
-  payhipProductUrl?: string; // Payhip support for experts
+  systemInstruction?: string; 
+  embedCode?: string; 
+  price: string; 
+  priceValue?: number; 
+  payhipProductUrl?: string; 
   isOnline: boolean;
   expertise: string[];
+  tools?: AgentTools;
+  thinkingBudget?: number; 
 }
 
 export interface User {
@@ -68,9 +81,9 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  credits: number; // For agent chats
-  purchasedContentIds: string[]; // List of IDs of purchased courses/articles/agents
-  isSubscriber: boolean; // Amour+ status
+  credits: number; 
+  purchasedContentIds: string[]; 
+  isSubscriber: boolean; 
 }
 
 export interface FilterState {

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle } from 'lucide-react';
+import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Post, ContentBlock, ContentType, Agent, VideoItem } from '../types';
 import { savePost, getAgents, getAstroAgents } from '../services/storage';
 import { generateBlogOutline, generateCourseStructure } from '../services/geminiService';
@@ -56,6 +56,16 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
   const removeBlock = (id: string) => {
     setBlocks(blocks.filter(b => b.id !== id));
+  };
+
+  const moveBlock = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === blocks.length - 1) return;
+
+    const newBlocks = [...blocks];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
+    setBlocks(newBlocks);
   };
 
   const handleMagicFetchVideos = async () => {
@@ -155,7 +165,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
-      {/* Modals ... Same as before */}
+      {/* Modals */}
       {showCourseModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rose-100">
@@ -265,10 +275,28 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
             </div>
 
             <div className="space-y-4">
-                {blocks.map((block) => (
+                {blocks.map((block, index) => (
                     <div key={block.id} className="group relative bg-white p-6 rounded-3xl border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-900/5 transition-all duration-300">
-                        <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 flex space-x-1 z-10">
-                            <button onClick={() => removeBlock(block.id)} className="p-2 bg-white shadow-lg text-slate-400 hover:text-red-500 rounded-full transition-colors border border-slate-100"><Trash2 size={16}/></button>
+                        <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 flex items-center space-x-1 z-10 scale-90 origin-top-right">
+                            <div className="flex flex-col space-y-1 mr-1">
+                                <button 
+                                    onClick={() => moveBlock(index, 'up')} 
+                                    disabled={index === 0}
+                                    className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronUp size={14}/>
+                                </button>
+                                <button 
+                                    onClick={() => moveBlock(index, 'down')} 
+                                    disabled={index === blocks.length - 1}
+                                    className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronDown size={14}/>
+                                </button>
+                            </div>
+                            <button onClick={() => removeBlock(block.id)} className="p-2.5 bg-white shadow-lg text-slate-400 hover:text-red-500 rounded-full transition-colors border border-slate-100">
+                                <Trash2 size={16}/>
+                            </button>
                         </div>
                         
                         {block.type === 'header' && <input className="w-full font-serif font-bold text-slate-900 border-none outline-none focus:ring-0 text-2xl" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Section Header" />}
@@ -384,7 +412,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                 </div>
             </div>
 
-            {/* Restored YouTube Video Vault Section */}
+            {/* YouTube Video Vault Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center">

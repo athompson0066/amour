@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Post, ContentType, Agent } from '../types';
 import { isSupabaseConfigured } from '../config';
-import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users } from 'lucide-react';
+import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check } from 'lucide-react';
 import { FadeIn } from './Animated';
 
 interface AdminDashboardProps {
@@ -43,6 +43,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'experts'>('content');
+  const [expertSubTab, setExpertSubTab] = useState<'relationship' | 'astro'>('relationship');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsConnected(isSupabaseConfigured());
@@ -58,16 +60,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setDeleteConfirm(null);
   };
 
+  const copyShortcode = (agent: Agent) => {
+      const code = `[${agent.embedCode || agent.id}]`;
+      navigator.clipboard.writeText(code);
+      setCopiedId(agent.id);
+      setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || post.type === filterType;
     return matchesSearch && matchesType;
   });
 
-  const filteredAgents = agents.filter(agent => 
-    agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    agent.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const allRelevantAgents = agents.filter(agent => {
+      const matchesSearch = agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          agent.role.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = expertSubTab === 'relationship' 
+          ? (agent.category === 'relationship' || !agent.category)
+          : agent.category === 'astro';
+      return matchesSearch && matchesCategory;
+  });
 
   const getTypeIcon = (type: ContentType) => {
     switch (type) {
@@ -123,21 +136,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Tab Switcher */}
-        <div className="flex space-x-1 bg-slate-200 p-1 rounded-xl w-fit mb-8">
-            <button 
-                onClick={() => setActiveTab('content')}
-                className={`flex items-center px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                <FileText size={16} className="mr-2" />
-                Content Library
-            </button>
-            <button 
-                onClick={() => setActiveTab('experts')}
-                className={`flex items-center px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'experts' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                <UserCheck size={16} className="mr-2" />
-                AI Experts
-            </button>
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex space-x-1 bg-slate-200 p-1 rounded-xl w-fit">
+                <button 
+                    onClick={() => setActiveTab('content')}
+                    className={`flex items-center px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    <FileText size={16} className="mr-2" />
+                    Content Library
+                </button>
+                <button 
+                    onClick={() => setActiveTab('experts')}
+                    className={`flex items-center px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'experts' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    <UserCheck size={16} className="mr-2" />
+                    AI Experts
+                </button>
+            </div>
+
+            {activeTab === 'experts' && (
+                <div className="flex space-x-1 bg-indigo-50 p-1 rounded-xl w-fit">
+                    <button 
+                        onClick={() => setExpertSubTab('relationship')}
+                        className={`flex items-center px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${expertSubTab === 'relationship' ? 'bg-rose-600 text-white shadow-sm' : 'text-indigo-400 hover:text-indigo-600'}`}
+                    >
+                        <Users size={12} className="mr-2" />
+                        Relationship
+                    </button>
+                    <button 
+                        onClick={() => setExpertSubTab('astro')}
+                        className={`flex items-center px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${expertSubTab === 'astro' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-400 hover:text-indigo-600'}`}
+                    >
+                        <Stars size={12} className="mr-2" />
+                        Astro-Council
+                    </button>
+                </div>
+            )}
         </div>
 
         {/* Filters */}
@@ -251,11 +285,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )
             ) : (
                 /* Experts Tab */
-                filteredAgents.length === 0 ? (
+                allRelevantAgents.length === 0 ? (
                     <div className="p-20 text-center">
                         <UserCheck className="text-slate-200 mx-auto w-16 h-16 mb-4" />
                         <h3 className="text-xl font-bold text-slate-900">No experts found</h3>
-                        <p className="text-slate-500 mb-6">Onboard your first AI relationship expert.</p>
+                        <p className="text-slate-500 mb-6">Onboard your first AI {expertSubTab} expert.</p>
                         <button onClick={onCreateAgent} className="text-rose-600 font-medium hover:underline">Add New Expert</button>
                     </div>
                 ) : (
@@ -271,7 +305,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredAgents.map(agent => (
+                            {allRelevantAgents.map(agent => (
                                 <tr key={agent.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
@@ -298,6 +332,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => copyShortcode(agent)} 
+                                                    className={`p-2 rounded-full transition-all ${copiedId === agent.id ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`} 
+                                                    title="Copy Shortcode"
+                                                >
+                                                    {copiedId === agent.id ? <Check size={18} /> : <Code size={18} />}
+                                                </button>
                                                 <button onClick={() => onEditAgent(agent)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full" title="Edit"><Edit size={18} /></button>
                                                 <button onClick={() => setDeleteConfirm(agent.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full" title="Delete"><Trash2 size={18} /></button>
                                             </div>

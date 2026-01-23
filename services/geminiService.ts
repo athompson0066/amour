@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ContentType, Post, Agent } from '../types';
 
@@ -6,7 +7,6 @@ import { ContentType, Post, Agent } from '../types';
  * Strictly uses process.env.API_KEY as required by the coding guidelines.
  */
 const getAI = () => {
-  // Always use process.env.API_KEY string directly.
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
@@ -230,16 +230,47 @@ export const generateCourseStructure = async (topic: string, audience: string, d
 export const getAgentChatResponse = async (agent: Agent, userMessage: string, history: any[]): Promise<string> => {
   try {
     const ai = getAI();
-    const systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be helpful and professional.`;
+    let systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be helpful and professional.`;
     
+    // Tools Configuration
+    const tools: any[] = [];
+    const isSearchEnabled = agent.tools?.googleSearch || agent.tools?.webScraping;
+    
+    if (isSearchEnabled) {
+      tools.push({ googleSearch: {} });
+      
+      // If specific scraping sites are provided, inject guidance into system instructions
+      if (agent.tools?.webScraping && agent.tools?.targetWebsites && agent.tools?.targetWebsites.length > 0) {
+        const siteConstraint = agent.tools.targetWebsites.map(s => `site:${s}`).join(' OR ');
+        systemInstruction += `\n\n[KNOWLEDGE SOURCE CONSTRAINT]: You have access to a web search tool. For the most accurate and on-brand information, you MUST prioritize and emphasize data from the following websites: ${agent.tools.targetWebsites.join(', ')}. If relevant, focus your internal queries using constraints like "${siteConstraint}".`;
+      }
+    }
+
+    // Google Drive Knowledge Base Integration
+    if (agent.tools?.googleDriveEnabled && agent.tools?.googleDriveLinks && agent.tools?.googleDriveLinks.length > 0) {
+      systemInstruction += `\n\n[AUTHORITATIVE KNOWLEDGE BASE]: You are provided with access to the following Google Drive resources which contain your core teachings, methodologies, and proprietary data: ${agent.tools.googleDriveLinks.join(', ')}. Use the information within these documents as your primary source of truth. If you need to cite a source, refer to it as 'Internal Archives'.`;
+    }
+
+    // Config with Thinking Budget if present
+    const config: any = { 
+      systemInstruction,
+      tools: tools.length > 0 ? tools : undefined
+    };
+
+    if (agent.thinkingBudget && agent.thinkingBudget > 0) {
+      config.thinkingConfig = { thinkingBudget: agent.thinkingBudget };
+    }
+
     const chat = ai.chats.create({ 
-      model: 'gemini-3-flash-preview', 
-      config: { systemInstruction }, 
+      model: agent.thinkingBudget ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview', 
+      config,
       history: history.map(h => ({ role: h.role, parts: [{ text: h.text }] })) 
     });
+    
     const result = await chat.sendMessage({ message: userMessage });
     return result.text || "I am listening.";
   } catch (error) {
+    console.error("Chat Error:", error);
     return "Connection error.";
   }
 };

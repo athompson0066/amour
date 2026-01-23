@@ -39,12 +39,28 @@ const App: React.FC = () => {
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isExternalEmbed, setIsExternalEmbed] = useState(false);
   
   const [user, setUser] = useState<User | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
-    refreshData();
+    // Check for External Embed Request via URL (?embed=agentId)
+    const params = new URLSearchParams(window.location.search);
+    const embedId = params.get('embed');
+    
+    refreshData().then(() => {
+        if (embedId) {
+            const allAgents = [...getAgents(), ...getAstroAgents()];
+            const target = allAgents.find(a => a.id === embedId || a.embedCode === embedId);
+            if (target) {
+                setSelectedAgent(target);
+                setIsExternalEmbed(true);
+                setCurrentView('chat');
+            }
+        }
+    });
+
     const initUser = async () => {
         const guest = await getCurrentUser();
         setUser(guest);
@@ -202,6 +218,11 @@ const App: React.FC = () => {
       }
       setCurrentView('soulmate-sketch');
   };
+
+  // Standalone Embed View (Iframe)
+  if (isExternalEmbed && selectedAgent && currentView === 'chat') {
+      return <div className="h-screen w-full bg-transparent"><ChatInterface agent={selectedAgent} onBack={() => {}} /></div>;
+  }
 
   return (
     <Layout 
@@ -370,7 +391,7 @@ const App: React.FC = () => {
       {currentView === 'admin-dashboard' && (
         <AdminDashboard 
           posts={posts}
-          agents={agents}
+          agents={[...agents, ...astroAgents]}
           isLoading={isLoadingPosts}
           onRefresh={refreshData}
           onCreate={() => { setSelectedPost(null); setCurrentView('admin-create'); }} 

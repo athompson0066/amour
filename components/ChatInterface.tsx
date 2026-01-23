@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Agent } from '../types';
-import { Send, ArrowLeft, MoreVertical, Phone, Video, Loader2 } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Phone, Video, Loader2, Globe, Eye, Brain, Search, Database } from 'lucide-react';
 import { getAgentChatResponse } from '../services/geminiService';
 
 interface ChatInterfaceProps {
@@ -51,8 +52,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
     setIsTyping(true);
 
     try {
-      // Prepare history for API (excluding the welcome message if it was hardcoded/not part of context, 
-      // but for simplicity we include the conversation flow)
       const history = messages.map(m => ({
         role: m.role,
         text: m.text
@@ -97,8 +96,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
             )}
           </div>
           <div className="ml-3">
-            <h3 className="font-bold text-slate-900 text-sm">{agent.name}</h3>
-            <p className="text-xs text-rose-500 font-medium">{agent.role}</p>
+            <div className="flex items-center space-x-2">
+                <h3 className="font-bold text-slate-900 text-sm">{agent.name}</h3>
+                <div className="flex items-center space-x-1">
+                    {agent.tools?.googleSearch && <Globe size={10} className="text-rose-500" title="Web Grounding Enabled" />}
+                    {agent.tools?.webScraping && <Search size={10} className="text-emerald-500" title="Web Scraping Active" />}
+                    {agent.tools?.googleDriveEnabled && <Database size={10} className="text-amber-500" title="Knowledge Base Active" />}
+                    {agent.tools?.vision && <Eye size={10} className="text-blue-500" title="Vision Analysis Enabled" />}
+                    {agent.thinkingBudget && agent.thinkingBudget > 0 ? <Brain size={10} className="text-purple-500" title="Advanced Reasoning Active" /> : null}
+                </div>
+            </div>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{agent.role}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2 text-slate-400">

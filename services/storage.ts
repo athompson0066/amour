@@ -36,6 +36,7 @@ const BASE_AGENTS: Agent[] = [
     id: 'agent-1',
     name: 'Dr. Elena Rose',
     role: 'Relationship Psychologist',
+    category: 'relationship',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200',
     description: 'Specializing in attachment theory and cognitive behavioral therapy for couples.',
     price: '$2.99/min',
@@ -47,6 +48,7 @@ const BASE_AGENTS: Agent[] = [
     id: 'agent-2',
     name: 'Marcus Thorne',
     role: 'Communication Specialist',
+    category: 'relationship',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200&h=200',
     description: 'Expert in non-violent communication and restoring lost intimacy in long-term marriages.',
     price: '$3.50/min',
@@ -58,6 +60,7 @@ const BASE_AGENTS: Agent[] = [
     id: 'agent-3',
     name: 'Sienna Vance',
     role: 'Modern Dating Coach',
+    category: 'relationship',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200&h=200',
     description: 'Helping singles navigate the digital landscape and build authentic self-confidence.',
     price: '$1.99/min',
@@ -68,18 +71,18 @@ const BASE_AGENTS: Agent[] = [
 ];
 
 const BASE_ASTRO_AGENTS: Agent[] = [
-  { id: 'aries', name: 'Aria', role: 'Aries Specialist', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&q=80&w=200&h=200', description: 'Harness the fiery energy of the ram for decisive life changes.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Passion', 'Leadership', 'Initiative'] },
-  { id: 'taurus', name: 'Terra', role: 'Taurus Specialist', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200&h=200', description: 'Finding stability and sensual fulfillment in your earthy connections.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Loyalty', 'Stability', 'Sensuality'] },
-  { id: 'gemini', name: 'Gemi', role: 'Gemini Specialist', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200', description: 'Bridging the gap between two minds through cosmic communication.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Intellect', 'Dialogue', 'Variety'] },
-  { id: 'cancer', name: 'Luna', role: 'Cancer Specialist', avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200', description: 'Navigating the deep lunar tides of emotional security and home.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Nurturing', 'Security', 'Intuition'] },
-  { id: 'leo', name: 'Solara', role: 'Leo Specialist', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200&h=200', description: 'Radiating self-love and heart-centered creative expression.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Confidence', 'Generosity', 'Drama'] },
-  { id: 'virgo', name: 'Vesta', role: 'Virgo Specialist', avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=200&h=200', description: 'Applying analytical wisdom to perfect your relationship dynamics.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Analysis', 'Purity', 'Service'] },
-  { id: 'libra', name: 'Lia', role: 'Libra Specialist', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200&h=200', description: 'Restoring harmony and aesthetic balance to your partnerships.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Harmony', 'Justice', 'Romance'] },
-  { id: 'scorpio', name: 'Nova', role: 'Scorpio Specialist', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200&h=200', description: 'Diving into the transformative depths of soul-level intimacy.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Depth', 'Transformation', 'Power'] },
-  { id: 'sagittarius', name: 'Sage', role: 'Sagittarius Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200', description: 'Expanding horizons through the search for philosophical truth.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Freedom', 'Optimism', 'Truth'] },
-  { id: 'capricorn', name: 'Cora', role: 'Capricorn Specialist', avatar: 'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&q=80&w=200&h=200', description: 'Building long-term legacy and structural integrity in love.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Ambition', 'Structure', 'Patience'] },
-  { id: 'aquarius', name: 'Aqua', role: 'Aquarius Specialist', avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&q=80&w=200&h=200', description: 'Pioneering unique, unconventional paths to collective connection.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Innovation', 'Community', 'Detachment'] },
-  { id: 'pisces', name: 'Pia', role: 'Pisces Specialist', avatar: 'https://images.unsplash.com/photo-1544717297-fa95b3ee51f3?auto=format&fit=crop&q=80&w=200&h=200', description: 'Melting boundaries through spiritual compassion and dreams.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Mysticism', 'Dreams', 'Healing'] }
+  { id: 'aries', name: 'Aria', role: 'Aries Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&q=80&w=200&h=200', description: 'Harness the fiery energy of the ram for decisive life changes.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Passion', 'Leadership', 'Initiative'] },
+  { id: 'taurus', name: 'Terra', role: 'Taurus Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200&h=200', description: 'Finding stability and sensual fulfillment in your earthy connections.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Loyalty', 'Stability', 'Sensuality'] },
+  { id: 'gemini', name: 'Gemi', role: 'Gemini Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200', description: 'Bridging the gap between two minds through cosmic communication.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Intellect', 'Dialogue', 'Variety'] },
+  { id: 'cancer', name: 'Luna', role: 'Cancer Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200', description: 'Navigating the deep lunar tides of emotional security and home.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Nurturing', 'Security', 'Intuition'] },
+  { id: 'leo', name: 'Solara', role: 'Leo Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200&h=200', description: 'Radiating self-love and heart-centered creative expression.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Confidence', 'Generosity', 'Drama'] },
+  { id: 'virgo', name: 'Vesta', role: 'Virgo Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=200&h=200', description: 'Applying analytical wisdom to perfect your relationship dynamics.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Analysis', 'Purity', 'Service'] },
+  { id: 'libra', name: 'Lia', role: 'Libra Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200&h=200', description: 'Restoring harmony and aesthetic balance to your partnerships.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Harmony', 'Justice', 'Romance'] },
+  { id: 'scorpio', name: 'Nova', role: 'Scorpio Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200&h=200', description: 'Diving into the transformative depths of soul-level intimacy.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Depth', 'Transformation', 'Power'] },
+  { id: 'sagittarius', name: 'Sage', role: 'Sagittarius Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200', description: 'Expanding horizons through the search for philosophical truth.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Freedom', 'Optimism', 'Truth'] },
+  { id: 'capricorn', name: 'Cora', role: 'Capricorn Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&q=80&w=200&h=200', description: 'Building long-term legacy and structural integrity in love.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Ambition', 'Structure', 'Patience'] },
+  { id: 'aquarius', name: 'Aqua', role: 'Aquarius Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&q=80&w=200&h=200', description: 'Pioneering unique, unconventional paths to collective connection.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Innovation', 'Community', 'Detachment'] },
+  { id: 'pisces', name: 'Pia', role: 'Pisces Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1544717297-fa95b3ee51f3?auto=format&fit=crop&q=80&w=200&h=200', description: 'Melting boundaries through spiritual compassion and dreams.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Mysticism', 'Dreams', 'Healing'] }
 ];
 
 const mapRowToPost = (row: any): Post => ({
@@ -216,20 +219,29 @@ export const getAgents = (): Agent[] => {
         ...custom
     ];
     
-    return combined.filter(agent => !excluded.includes(agent.id));
+    // Default category to relationship if missing
+    return combined
+        .map(a => ({ ...a, category: a.category || 'relationship' }))
+        .filter(agent => !excluded.includes(agent.id) && agent.category === 'relationship');
 };
 
 export const getAstroAgents = (): Agent[] => {
     const overrides = getAgentOverrides();
+    const custom = getCustomAgents();
     const excluded = getAgentExclusions();
     
-    return BASE_ASTRO_AGENTS
-        .map(agent => ({ ...agent, ...(overrides[agent.id] || {}) }))
-        .filter(agent => !excluded.includes(agent.id));
+    const combined = [
+        ...BASE_ASTRO_AGENTS.map(agent => ({ ...agent, ...(overrides[agent.id] || {}) })),
+        ...custom
+    ];
+    
+    return combined
+        .map(a => ({ ...a, category: a.category || 'astro' }))
+        // Fix: Use 'agent.id' instead of undefined 'a.id' in the filter predicate.
+        .filter(agent => !excluded.includes(agent.id) && (agent.category === 'astro' || agent.id.length < 15)); // Heuristic for base astro IDs
 };
 
 export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promise<void> => {
-    // If it's a custom agent, we update the custom list
     const custom = getCustomAgents();
     const customIndex = custom.findIndex(a => a.id === agentId);
     
@@ -237,7 +249,6 @@ export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promi
         custom[customIndex] = { ...custom[customIndex], ...updates };
         localStorage.setItem(AGENT_CUSTOM_KEY, JSON.stringify(custom));
     } else {
-        // Otherwise, save as an override for a base agent
         const overrides = getAgentOverrides();
         overrides[agentId] = { ...(overrides[agentId] || {}), ...updates };
         localStorage.setItem(AGENT_OVERRIDES_KEY, JSON.stringify(overrides));
@@ -251,12 +262,10 @@ export const addCustomAgent = async (agent: Agent): Promise<void> => {
 };
 
 export const deleteAgent = async (id: string): Promise<void> => {
-    // 1. Check if it's a custom agent and remove from custom list
     const custom = getCustomAgents();
     const newCustom = custom.filter(a => a.id !== id);
     localStorage.setItem(AGENT_CUSTOM_KEY, JSON.stringify(newCustom));
     
-    // 2. Add to exclusions list to hide if it's a base agent
     const excluded = getAgentExclusions();
     if (!excluded.includes(id)) {
         excluded.push(id);
