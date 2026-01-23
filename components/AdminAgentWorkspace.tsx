@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, BrainCircuit, Rocket, FileText, BookOpen, Send, Loader2, ArrowLeft, Terminal, User, ChevronRight, CheckCircle2, ShieldAlert, Mail, Map, Cpu, Headphones, List, Book, MessageSquare, Image as ImageIcon, CircleDollarSign, Lock, Youtube, Video } from 'lucide-react';
+import { Sparkles, BrainCircuit, Rocket, FileText, BookOpen, Send, Loader2, ArrowLeft, Terminal, User, ChevronRight, CheckCircle2, ShieldAlert, Mail, Map, Cpu, Headphones, List, Book, MessageSquare, Image as ImageIcon, CircleDollarSign, Lock, Youtube, Video, ExternalLink } from 'lucide-react';
 import { runCrewMission } from '../services/geminiService';
 import { savePost, DEFAULT_AUTHOR } from '../services/storage';
 import { fetchVideos } from '../services/youtubeService';
@@ -36,6 +36,7 @@ const AdminAgentWorkspace: React.FC<AdminAgentWorkspaceProps> = ({ onBack, onPub
   const [featureImageUrl, setFeatureImageUrl] = useState('');
   const [isPremium, setIsPremium] = useState(false);
   const [price, setPrice] = useState('19.99');
+  const [payhipUrl, setPayhipUrl] = useState('');
   const [includeVideos, setIncludeVideos] = useState(false);
   const [videoCount, setVideoCount] = useState(3);
   const [selectedOp, setSelectedOp] = useState<ContentType>('article');
@@ -99,6 +100,7 @@ const AdminAgentWorkspace: React.FC<AdminAgentWorkspaceProps> = ({ onBack, onPub
                 coverImage: finalCoverImage, 
                 isPremium: isPremium,
                 price: finalPrice,
+                payhipProductUrl: isPremium ? payhipUrl : undefined,
                 relatedVideos: actualVideos.length > 0 ? actualVideos : undefined,
                 blocks: result.blocks.map((b: any) => ({
                     ...b,
@@ -226,10 +228,26 @@ const AdminAgentWorkspace: React.FC<AdminAgentWorkspaceProps> = ({ onBack, onPub
                             <AnimatePresence>
                                 {isPremium && (
                                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                        <div className="pt-2">
-                                            <div className="flex items-center space-x-2">
-                                                <span className="text-slate-400 font-mono text-sm">$</span>
-                                                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-amber-500 outline-none" step="0.01" />
+                                        <div className="pt-2 space-y-4">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pricing (USD)</label>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-slate-400 font-mono text-sm">$</span>
+                                                    <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-amber-500 outline-none" step="0.01" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center">
+                                                    <ExternalLink size={10} className="mr-1" />
+                                                    Payhip Product Link
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    value={payhipUrl} 
+                                                    onChange={(e) => setPayhipUrl(e.target.value)} 
+                                                    placeholder="https://payhip.com/b/XXXX"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-amber-500 outline-none" 
+                                                />
                                             </div>
                                         </div>
                                     </motion.div>

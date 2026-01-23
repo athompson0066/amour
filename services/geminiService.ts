@@ -1,18 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ContentType, Post, Agent } from '../types';
-import { config as appConfig } from '../config';
 
 /**
  * Lazy initializer for the Google GenAI client.
- * Prevents construction errors if the API key is missing at top-level.
+ * Strictly uses process.env.API_KEY as required by the coding guidelines.
  */
 const getAI = () => {
-  const apiKey = appConfig.geminiApiKey;
-  if (!apiKey) {
-    console.warn("Gemini API key is missing. AI features will fail until configured.");
-    // Return a dummy object or throw a descriptive error when called
-  }
-  return new GoogleGenAI({ apiKey: apiKey || 'MISSING_KEY' });
+  // Always use process.env.API_KEY string directly.
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 /**

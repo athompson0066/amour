@@ -4,7 +4,7 @@ import { Post, User, ContentBlock, VideoItem, Agent } from '../types';
 import { 
     ArrowLeft, Calendar, Clock, Share2, Lock, CheckCircle, ChevronRight, Star, 
     BookOpen, Check, Map, Lightbulb, ListChecks, PenTool, BrainCircuit, 
-    PlayCircle, X, Youtube, Twitter, Facebook, Linkedin, Link, MessageCircle, UserCheck, MessageSquare, Phone, AlertTriangle
+    PlayCircle, X, Youtube, Twitter, Facebook, Linkedin, Link, MessageCircle, UserCheck, MessageSquare, Phone, AlertTriangle, Video
 } from 'lucide-react';
 import { ParallaxHeader, FadeIn, StaggerGrid, StaggerItem } from './Animated';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,10 @@ interface ArticleViewProps {
   onLoginRequest: () => void;
 }
 
+const getYoutubeEmbedUrl = (videoId: string) => {
+    return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+};
+
 // Expert Embed Component - Supports complete AI interactive experience
 const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => {
     const [agent, setAgent] = useState<Agent | null>(null);
@@ -29,7 +33,6 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
     useEffect(() => {
         const all = [...getAgents(), ...getAstroAgents()];
         const target = agentIdOrSlug.toLowerCase().trim();
-        // Find by ID or by Custom Shortcode Slug
         const found = all.find(a => 
             a.id.toLowerCase() === target || 
             (a.embedCode && a.embedCode.toLowerCase() === target)
@@ -91,7 +94,6 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
                 </div>
             </div>
 
-            {/* Interactive Experience Overlay */}
             <AnimatePresence>
                 {activeMode !== 'none' && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-10">
@@ -127,7 +129,6 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
 
 // Advanced Content Renderer with Integrated Shortcode Injection
 const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
-    // 1. Get all available agent slugs and IDs
     const allAgents = [...getAgents(), ...getAstroAgents()];
     const agentIdentifiers = allAgents.flatMap(a => [
         `[agent:${a.id}]`,
@@ -135,28 +136,18 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
         a.embedCode
     ]).filter(Boolean) as string[];
 
-    // 2. We need a regex that matches any of these identifiers.
-    // Brackets require escaping in regex.
     const escapedIdentifiers = agentIdentifiers.map(id => 
         id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     );
     
-    // Sort identifiers by length descending to prevent partial matching (e.g. 'agent' matching before 'agent-slug')
     escapedIdentifiers.sort((a, b) => b.length - a.length);
-    
     const combinedRegex = new RegExp(`(${escapedIdentifiers.join('|')})`, 'g');
-
-    // 3. Split the content and render parts
     const parts = content.split(combinedRegex);
 
     return (
         <div className="space-y-4 text-lg text-slate-700 leading-relaxed font-light">
             {parts.map((part, index) => {
-                const trimmedPart = part.trim();
-                
-                // check if this part is one of our agent identifiers
                 const isAgent = agentIdentifiers.some(id => id === part);
-
                 if (isAgent) {
                     const cleanSlug = part.startsWith('[agent:') 
                         ? part.slice(7, -1) 
@@ -166,15 +157,12 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
                     return <ExpertEmbed key={index} agentIdOrSlug={cleanSlug} />;
                 }
 
-                // Standard formatting for normal text parts
                 const lines = part.split('\n');
                 return (
                     <React.Fragment key={index}>
                         {lines.map((line, i) => {
                             const trimmedLine = line.trim();
                             if (!trimmedLine) return <div key={i} className="h-4" />;
-
-                            // Headers and special UI sections
                             if (trimmedLine.startsWith('### Key Concept')) {
                                 return (
                                     <div key={i} className="flex items-center space-x-4 text-xl font-bold text-amber-800 bg-amber-50 p-6 rounded-3xl mt-12 mb-6 border border-amber-100 shadow-sm">
@@ -199,12 +187,9 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
                                     </div>
                                 );
                             }
-                            
                             if (trimmedLine.startsWith('###')) {
                                 return <h3 key={i} className="text-2xl font-serif font-bold text-slate-900 mt-12 mb-4 leading-tight">{formatInlineStyles(trimmedLine.replace(/###/g, '').trim())}</h3>;
                             }
-
-                            // Bullet Lists
                             if (trimmedLine.startsWith('•') || trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
                                  return (
                                      <div key={i} className="flex items-start ml-2 mb-3">
@@ -213,8 +198,6 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
                                      </div>
                                  );
                             }
-                            
-                            // Numbered Lists
                             if (/^\d+\.\s/.test(trimmedLine)) {
                                  return (
                                      <div key={i} className="flex items-start ml-2 mb-3">
@@ -223,8 +206,6 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
                                      </div>
                                  );
                             }
-
-                            // Blockquotes
                             if (trimmedLine.startsWith('>')) {
                                 return (
                                     <div key={i} className="relative p-10 my-12 overflow-hidden rounded-[2rem] bg-slate-50 border border-slate-100 group">
@@ -235,8 +216,6 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
                                     </div>
                                 );
                             }
-
-                            // Paragraph
                             return <p key={i} className="mb-4">{formatInlineStyles(trimmedLine)}</p>;
                         })}
                     </React.Fragment>
@@ -261,6 +240,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
   const hasAccess = !post.isPremium || (user && user.purchasedContentIds.includes(post.id)) || (user && user.isSubscriber);
   const isCourse = post.type === 'course';
   const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
 
   // Group blocks for courses logic
   const courseSections = useMemo(() => {
@@ -397,6 +377,23 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                                         </figure>
                                     </FadeIn>
                                 );
+                            case 'video':
+                                return (
+                                    <FadeIn key={block.id} className="my-12">
+                                        <div className="aspect-video w-full rounded-[2rem] overflow-hidden shadow-2xl border border-slate-100">
+                                            <iframe 
+                                                width="100%" 
+                                                height="100%" 
+                                                src={getYoutubeEmbedUrl(block.meta?.videoId || '')}
+                                                title="Embedded Video"
+                                                frameBorder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                                className="w-full h-full"
+                                            />
+                                        </div>
+                                    </FadeIn>
+                                );
                             case 'agent':
                                 return <FadeIn key={block.id}><ExpertEmbed agentIdOrSlug={block.meta?.agentId || ''} /></FadeIn>;
                             default: return null;
@@ -419,6 +416,47 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
             );
         })}
 
+        {/* Masterclass Video Library Section */}
+        {hasAccess && post.relatedVideos && post.relatedVideos.length > 0 && (
+            <FadeIn className="mt-20 pt-20 border-t border-slate-100">
+                <div className="flex items-center space-x-3 mb-10">
+                    <div className="bg-red-50 p-3 rounded-2xl">
+                        <Youtube className="text-red-600" size={28} />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-serif font-bold text-slate-900">Masterclass Video Vault</h3>
+                        <p className="text-sm text-slate-500 font-medium">Deepen your understanding with curated expert insights.</p>
+                    </div>
+                </div>
+                
+                <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {post.relatedVideos.map((video) => (
+                        <StaggerItem key={video.id}>
+                            <div 
+                                onClick={() => setSelectedVideo(video)}
+                                className="group relative bg-slate-50 rounded-[2rem] overflow-hidden border border-slate-100 cursor-pointer hover:shadow-2xl transition-all duration-500"
+                            >
+                                <div className="aspect-video relative overflow-hidden">
+                                    <img src={video.thumbnail} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={video.title} />
+                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                        <div className="w-16 h-16 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-2xl transform scale-90 group-hover:scale-100 transition-all">
+                                            <PlayCircle className="text-red-600 ml-1" size={32} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <h4 className="font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">{video.title}</h4>
+                                    <div className="flex items-center mt-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <span>{video.channelTitle}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </StaggerItem>
+                    ))}
+                </StaggerGrid>
+            </FadeIn>
+        )}
+
         <div className="mt-20 flex justify-between items-center pt-10 border-t border-slate-100">
           <div className="flex items-center space-x-4">
              <img src={post.author.avatar} className="w-12 h-12 rounded-full border-2 border-rose-100 shadow-sm" alt={post.author.name} />
@@ -433,6 +471,35 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
           </button>
         </div>
       </article>
+
+      {/* Video Modal Overlay */}
+      <AnimatePresence>
+        {selectedVideo && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-10" onClick={() => setSelectedVideo(null)}>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/95 backdrop-blur-md" />
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }} 
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    onClick={e => e.stopPropagation()}
+                    className="relative w-full max-w-5xl aspect-video bg-black rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/10"
+                >
+                    <button onClick={() => setSelectedVideo(null)} className="absolute top-6 right-6 z-20 p-3 bg-white/10 text-white hover:bg-white/20 rounded-full backdrop-blur-md transition-all">
+                        <X size={24} />
+                    </button>
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={`${getYoutubeEmbedUrl(selectedVideo.id)}&autoplay=1`}
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen 
+                        className="w-full h-full"
+                    />
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

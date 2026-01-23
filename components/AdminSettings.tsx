@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Save, AlertCircle, Database, CreditCard, Video, RefreshCw, CheckCircle2, FlaskConical } from 'lucide-react';
+import { Save, AlertCircle, Database, CreditCard, Video, RefreshCw, CheckCircle2, ShoppingBag, ExternalLink } from 'lucide-react';
 import { config, saveEnvConfig } from '../config';
 import { initSupabase } from '../services/supabaseClient';
 
@@ -14,6 +14,8 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onCancel }) => {
     VITE_SUPABASE_ANON_KEY: config.supabase.anonKey || '',
     VITE_PAYPAL_CLIENT_ID: config.paypal.clientId || '',
     VITE_PAYPAL_SANDBOX: config.paypal.isSandbox ? 'true' : 'false',
+    VITE_PAYHIP_SELLER_ID: config.payhip.sellerId || '',
+    VITE_PAYHIP_API_KEY: config.payhip.apiKey || '',
     VITE_YOUTUBE_API_KEY: config.youtube.apiKey || ''
   });
   const [saved, setSaved] = useState(false);
@@ -25,10 +27,9 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onCancel }) => {
 
   const handleSave = () => {
     saveEnvConfig(values);
-    initSupabase(); // Re-initialize services with new keys
+    initSupabase(); 
     setSaved(true);
     
-    // Auto-close after short delay
     setTimeout(() => {
         onCancel();
     }, 1500);
@@ -68,9 +69,50 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onCancel }) => {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 flex items-start">
             <AlertCircle className="text-blue-500 mt-0.5 mr-3 flex-shrink-0" size={20} />
             <p className="text-sm text-blue-800">
-                Use this form to save your API keys to your browser's local storage. 
-                Changes apply immediately without reloading the page.
+                Update your platform keys and configurations here. Changes apply immediately to the directory.
             </p>
+        </div>
+
+        {/* Payhip */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-6">
+            <div className="flex items-center mb-6">
+                <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                    <ShoppingBag className="text-indigo-600" size={24} />
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-slate-900">Payhip Checkout</h3>
+                    <p className="text-xs text-slate-500">Premium Course & Digital Product Sales</p>
+                </div>
+            </div>
+            
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Payhip API Key (Optional)</label>
+                    <input 
+                        type="password" 
+                        value={values.VITE_PAYHIP_API_KEY}
+                        onChange={(e) => handleChange('VITE_PAYHIP_API_KEY', e.target.value)}
+                        placeholder="Required for advanced integrations..."
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none font-mono text-sm"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center">
+                      Seller ID / Global Handler
+                      <ExternalLink size={12} className="ml-1 opacity-50" />
+                    </label>
+                    <input 
+                        type="text" 
+                        value={values.VITE_PAYHIP_SELLER_ID}
+                        onChange={(e) => handleChange('VITE_PAYHIP_SELLER_ID', e.target.value)}
+                        placeholder="Your Payhip username or ID"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none font-mono text-sm"
+                    />
+                </div>
+                <p className="text-[10px] text-slate-400 italic">
+                  Ensure the Payhip SDK script is allowed to run. The SDK will automatically detect product links and open the checkout popup.
+                </p>
+            </div>
         </div>
 
         {/* Supabase */}
@@ -109,15 +151,15 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onCancel }) => {
             </div>
         </div>
 
-        {/* PayPal */}
+        {/* PayPal Fallback */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-6">
             <div className="flex items-center mb-6">
                 <div className="p-2 bg-blue-100 rounded-lg mr-3">
                     <CreditCard className="text-blue-600" size={24} />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900">PayPal Integration</h3>
-                    <p className="text-xs text-slate-500">Secure Checkout & Access</p>
+                    <h3 className="text-lg font-bold text-slate-900">PayPal Fallback</h3>
+                    <p className="text-xs text-slate-500">Alternative Payment Method</p>
                 </div>
             </div>
             
@@ -131,21 +173,6 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onCancel }) => {
                         placeholder="AaBbCc..."
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none font-mono text-sm"
                     />
-                </div>
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <div className="flex items-center space-x-2">
-                        <FlaskConical size={16} className="text-blue-500" />
-                        <span className="text-sm font-medium text-slate-700">Sandbox Mode</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            checked={values.VITE_PAYPAL_SANDBOX === 'true'} 
-                            onChange={(e) => handleChange('VITE_PAYPAL_SANDBOX', e.target.checked ? 'true' : 'false')} 
-                            className="sr-only peer" 
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
                 </div>
             </div>
         </div>

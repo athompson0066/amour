@@ -1,11 +1,8 @@
+
 /**
  * Application Configuration
  * 
  * Centralizes access to environment variables.
- * PRIORITY:
- * 1. import.meta.env (Vite standard)
- * 2. LocalStorage (Runtime overrides via Settings UI)
- * 3. process.env (Standard/System fallback)
  */
 
 import { keys } from './keys';
@@ -19,7 +16,6 @@ const getEnv = (key: string): string => {
       return import.meta.env[key] as string;
     }
   } catch (e) {
-    // import.meta might not be supported in some environments
   }
 
   // 2. Check LocalStorage overrides
@@ -62,6 +58,14 @@ export const config = {
     };
   },
 
+  // Payhip Configuration
+  get payhip() {
+    return {
+      apiKey: getEnv('VITE_PAYHIP_API_KEY') || '',
+      sellerId: getEnv('VITE_PAYHIP_SELLER_ID') || ''
+    };
+  },
+
   // YouTube Configuration
   get youtube() {
     const apiKey = getEnv('VITE_YOUTUBE_API_KEY') || getEnv('YOUTUBE_API_KEY') || keys.YOUTUBE_API_KEY;
@@ -74,8 +78,8 @@ export const isSupabaseConfigured = () => {
   return !!url && !!anonKey && url.startsWith('http');
 };
 
-export const isPayPalConfigured = () => {
-  return !!config.paypal.clientId && !config.paypal.clientId.includes('AaBbCc');
+export const isPayhipConfigured = () => {
+  return !!config.payhip.sellerId;
 };
 
 export const saveEnvConfig = (values: Record<string, any>) => {

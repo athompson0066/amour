@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Agent } from '../types';
 import { Mic, MicOff, PhoneOff, Volume2, AlertCircle, Loader2 } from 'lucide-react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { config as appConfig } from '../config';
 
 interface VoiceInterfaceProps {
   agent: Agent;
@@ -11,7 +10,7 @@ interface VoiceInterfaceProps {
 
 // --- Audio Utils from Gemini Documentation ---
 
-function createBlob(data: Float32Array): Blob {
+function createBlob(data: Float32Array): { data: string; mimeType: string } {
     const l = data.length;
     const int16 = new Int16Array(l);
     for (let i = 0; i < l; i++) {
@@ -29,7 +28,7 @@ function createBlob(data: Float32Array): Blob {
     return {
         data: btoa(binary),
         mimeType: 'audio/pcm;rate=16000',
-    } as any; // Cast to satisfy strict Blob type if needed, or adjust
+    };
 }
 
 function decode(base64: string) {
@@ -95,8 +94,8 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 streamRef.current = stream;
 
-                // 3. Connect to Gemini Live API
-                const ai = new GoogleGenAI({ apiKey: appConfig.geminiApiKey });
+                // 3. Connect to Gemini Live API - strictly using process.env.API_KEY
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 
                 // Use custom instructions if defined, else fallback to auto-generated one
                 const systemInstruction = agent.systemInstruction || `You are ${agent.name}, a ${agent.role}. ${agent.description}. Be empathetic, professional, and concise. This is a voice call, so keep responses relatively short and conversational.`;
@@ -143,7 +142,6 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
                                 setIsAgentSpeaking(true);
                                 
                                 // Reset "Agent Speaking" visual after a delay if no new audio comes
-                                // (Simplistic visualizer logic)
                                 setTimeout(() => { if(mounted) setIsAgentSpeaking(false); }, 1000);
 
                                 const ctx = outputContextRef.current;
@@ -164,7 +162,6 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
                                 
                                 source.addEventListener('ended', () => {
                                     sourcesRef.current.delete(source);
-                                    // if (sourcesRef.current.size === 0) setIsAgentSpeaking(false);
                                 });
 
                                 source.start(nextStartTimeRef.current);
@@ -216,9 +213,6 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ agent, onEndCall }) => 
             }
             if (inputContextRef.current) inputContextRef.current.close();
             if (outputContextRef.current) outputContextRef.current.close();
-            
-            // Note: The SDK doesn't expose a clean '.close()' on the session promise result easily 
-            // without awaiting it, but browser cleanup of websocket usually handles it.
         };
     }, [agent, isMuted]);
 

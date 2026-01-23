@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Save, X, UserCheck, Image, DollarSign, BrainCircuit, Activity, Plus, Trash2, Loader2, Sparkles, Code2, Copy, Check, Info, Share2, Zap } from 'lucide-react';
+// Added missing CircleDollarSign import
+import { Save, X, UserCheck, Image, DollarSign, BrainCircuit, Activity, Plus, Trash2, Loader2, Sparkles, Code2, Copy, Check, Info, Share2, Zap, ExternalLink, CircleDollarSign } from 'lucide-react';
 import { Agent } from '../types';
 import { saveAgent, addCustomAgent } from '../services/storage';
 
@@ -19,6 +20,7 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
   const [embedCode, setEmbedCode] = useState(initialAgent?.embedCode || '');
   const [price, setPrice] = useState(initialAgent?.price || '$2.99/min');
   const [priceValue, setPriceValue] = useState(initialAgent?.priceValue || 2.99);
+  const [payhipUrl, setPayhipUrl] = useState(initialAgent?.payhipProductUrl || '');
   const [isOnline, setIsOnline] = useState(initialAgent?.isOnline ?? true);
   const [expertiseStr, setExpertiseStr] = useState(initialAgent?.expertise.join(', ') || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -40,6 +42,7 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
             embedCode: embedCode.trim(), 
             price, 
             priceValue, 
+            payhipProductUrl: payhipUrl,
             isOnline, 
             expertise
         };
@@ -243,8 +246,8 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                         <div>
-                            <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Consultation Rate</label>
+                        <div>
+                            <label className="block text-sm font-black text-slate-900 mb-2 ml-1">Consultation Rate (Display)</label>
                             <input 
                                 type="text" 
                                 value={price} 
@@ -262,6 +265,38 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
                                 placeholder="Dating, Loss, Trust..."
                                 className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                             />
+                        </div>
+                    </div>
+
+                    <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 shadow-inner mt-8">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <div className="p-2 bg-amber-100 rounded-xl"><CircleDollarSign className="text-amber-600" size={20} /></div>
+                            <label className="block text-sm font-black text-amber-900">Monetization (Numerical)</label>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label className="block text-xs font-bold text-amber-600 uppercase mb-2 ml-1">Payhip Checkout Value ($)</label>
+                                <input 
+                                    type="number" 
+                                    value={priceValue} 
+                                    onChange={(e) => setPriceValue(parseFloat(e.target.value))}
+                                    className="w-full px-5 py-3.5 bg-white border border-amber-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 outline-none transition-all"
+                                    step="0.01"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-amber-600 uppercase mb-2 ml-1 flex items-center">
+                                    <ExternalLink size={12} className="mr-1" />
+                                    Payhip Product URL
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={payhipUrl} 
+                                    onChange={(e) => setPayhipUrl(e.target.value)}
+                                    placeholder="https://payhip.com/b/XXXX"
+                                    className="w-full px-5 py-3.5 bg-white border border-amber-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 outline-none transition-all font-mono text-xs"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Type, Quote, Save, Wand2, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck } from 'lucide-react';
-import { Post, ContentBlock, ContentType, Agent } from '../types';
+import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle } from 'lucide-react';
+import { Post, ContentBlock, ContentType, Agent, VideoItem } from '../types';
 import { savePost, getAgents, getAstroAgents } from '../services/storage';
-import { generateBlogOutline, enhanceContent, generateCourseStructure } from '../services/geminiService';
+import { generateBlogOutline, generateCourseStructure } from '../services/geminiService';
+import { fetchVideos } from '../services/youtubeService';
 
 interface AdminEditorProps {
   onCancel: () => void;
@@ -17,17 +18,17 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const [type, setType] = useState<ContentType>(initialPost?.type || 'article');
   const [isPremium, setIsPremium] = useState(initialPost?.isPremium || false);
   const [price, setPrice] = useState<number>(initialPost?.price || 0);
+  const [payhipUrl, setPayhipUrl] = useState(initialPost?.payhipProductUrl || '');
   const [blocks, setBlocks] = useState<ContentBlock[]>(initialPost?.blocks || []);
+  const [relatedVideos, setRelatedVideos] = useState<VideoItem[]>(initialPost?.relatedVideos || []);
   const [coverImage, setCoverImage] = useState(initialPost?.coverImage || `https://picsum.photos/seed/${Date.now()}/800/400`);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isFetchingVideos, setIsFetchingVideos] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [tags, setTags] = useState(initialPost?.tags.join(', ') || '');
   
-  // Expert Selector State
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
-
-  // Course Generator State
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseTopic, setCourseTopic] = useState('');
   const [courseAudience, setCourseAudience] = useState('');
@@ -49,35 +50,29 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
     setBlocks([...blocks, newBlock]);
   };
 
-  const updateBlock = (id: string, content: string) => {
-    setBlocks(blocks.map(b => b.id === id ? { ...b, content } : b));
+  const updateBlock = (id: string, content: string, meta?: any) => {
+    setBlocks(blocks.map(b => b.id === id ? { ...b, content, meta: { ...b.meta, ...meta } } : b));
   };
 
   const removeBlock = (id: string) => {
     setBlocks(blocks.filter(b => b.id !== id));
   };
 
-  const handleAIOutline = async () => {
-    if (!title) {
-        alert("Please enter a title first so the AI knows what to write about.");
-        return;
-    }
-    setIsGenerating(true);
-    const outline = await generateBlogOutline(title);
-    
-    const lines = outline.split('\n').filter(l => l.trim().length > 0);
-    const newBlocks: ContentBlock[] = lines.map(line => {
-       const cleanLine = line.replace(/^[-*#]+ /, '');
-       return {
-           id: Math.random().toString(36).substr(2, 9),
-           type: line.includes('Intro') || line.includes('Conclusion') ? 'text' : 'header',
-           content: cleanLine,
-           meta: { level: 'h2' }
-       };
-    });
-    
-    setBlocks([...blocks, ...newBlocks]);
-    setIsGenerating(false);
+  const handleMagicFetchVideos = async () => {
+      if (!title) return alert("Enter a title first so we know what to search for.");
+      setIsFetchingVideos(true);
+      try {
+          const results = await fetchVideos(title);
+          setRelatedVideos(results.slice(0, 6));
+      } catch (err) {
+          console.error(err);
+      } finally {
+          setIsFetchingVideos(false);
+      }
+  };
+
+  const removeRelatedVideo = (id: string) => {
+      setRelatedVideos(relatedVideos.filter(v => v.id !== id));
   };
 
   const handleGenerateCourse = async () => {
@@ -141,10 +136,11 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           publishedAt: initialPost?.publishedAt || new Date().toISOString(),
           readTime: type === 'course' ? '4 Week Course' : '5 min read',
           isPremium,
-          price: type === 'course' ? price : undefined,
+          price: isPremium ? price : undefined,
+          payhipProductUrl: isPremium ? payhipUrl : undefined,
           tags: tags.split(',').map(t => t.trim()).filter(t => t),
           blocks,
-          relatedVideos: initialPost?.relatedVideos
+          relatedVideos: relatedVideos.length > 0 ? relatedVideos : undefined
         };
         
         await savePost(newPost);
@@ -159,10 +155,10 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
-      {/* Course Generator Modal */}
+      {/* Modals ... Same as before */}
       {showCourseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rose-100">
                 <div className="p-6 border-b border-rose-100 bg-rose-50 flex justify-between items-center">
                     <h3 className="text-xl font-serif font-bold text-rose-900 flex items-center">
                         <Sparkles className="mr-2 text-rose-500" />
@@ -173,17 +169,14 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                     </button>
                 </div>
                 <div className="p-6 space-y-4">
-                    <p className="text-slate-600 text-sm">
-                        Describe your course idea, curriculum, and pricing details.
-                    </p>
-                    {generationError && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-start"><AlertCircle size={16} className="mr-2 mt-0.5" />{generationError}</div>}
+                    <p className="text-slate-600 text-sm">Describe your course idea and let AI draft the syllabus.</p>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Topic</label>
-                        <input type="text" className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none" value={courseTopic} onChange={(e) => setCourseTopic(e.target.value)} />
+                        <input type="text" className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500/20" value={courseTopic} onChange={(e) => setCourseTopic(e.target.value)} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Draft Outline</label>
-                        <textarea className="w-full px-4 py-2 border border-slate-300 rounded-lg h-24" value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
+                        <textarea className="w-full px-4 py-2 border border-slate-300 rounded-lg h-24 focus:ring-2 focus:ring-rose-500/20" value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
                     </div>
                 </div>
                 <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
@@ -196,25 +189,24 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
         </div>
       )}
 
-      {/* Agent Selector Modal */}
       {showAgentModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-              <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-                  <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+                  <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                       <h3 className="text-lg font-bold text-slate-900">Select Expert to Embed</h3>
-                      <button onClick={() => setShowAgentModal(false)}><X size={24} /></button>
+                      <button onClick={() => setShowAgentModal(false)} className="p-2 hover:bg-white rounded-full transition-colors"><X size={20} /></button>
                   </div>
                   <div className="max-h-96 overflow-y-auto p-4 space-y-2">
                       {availableAgents.map(agent => (
                           <button 
                             key={agent.id} 
                             onClick={() => handleEmbedAgent(agent)}
-                            className="w-full flex items-center p-3 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100"
+                            className="w-full flex items-center p-4 hover:bg-rose-50 rounded-2xl transition-all border border-transparent hover:border-rose-100 group"
                           >
-                              <img src={agent.avatar} className="w-10 h-10 rounded-full object-cover mr-3" />
+                              <img src={agent.avatar} className="w-12 h-12 rounded-full object-cover mr-4 shadow-sm border-2 border-white group-hover:scale-105 transition-transform" />
                               <div className="text-left">
                                   <div className="font-bold text-sm text-slate-900">{agent.name}</div>
-                                  <div className="text-[10px] text-slate-500 uppercase">{agent.role}</div>
+                                  <div className="text-[10px] text-rose-500 uppercase font-black tracking-widest">{agent.role}</div>
                               </div>
                           </button>
                       ))}
@@ -223,88 +215,222 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           </div>
       )}
 
+      {/* Sticky Header */}
       <div className="bg-white border-b border-slate-200 sticky top-16 z-40 px-6 py-4 flex justify-between items-center shadow-sm">
         <h2 className="text-xl font-bold text-slate-700 flex items-center">
-            <Layout className="mr-2 text-rose-500" />
-            {initialPost ? 'Edit Content' : 'Create New Content'}
+            <div className="p-2 bg-rose-50 rounded-lg mr-3"><Layout className="text-rose-500" size={20} /></div>
+            {initialPost ? 'Update Content' : 'Draft New Experience'}
         </h2>
-        <div className="flex space-x-3">
-          <button onClick={onCancel} className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-md transition-colors">Cancel</button>
+        <div className="flex items-center space-x-3">
+          <button onClick={() => setShowCourseModal(true)} className="flex items-center space-x-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-full transition-all text-sm font-bold">
+              <Sparkles size={16} />
+              <span>AI Course Generator</span>
+          </button>
+          <div className="w-px h-6 bg-slate-200 mx-2" />
+          <button onClick={onCancel} className="px-5 py-2.5 text-slate-500 hover:text-slate-700 font-bold text-sm">Cancel</button>
           <button 
             onClick={handleSave} 
             disabled={isSaving}
-            className="px-6 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 shadow-md flex items-center font-medium disabled:opacity-70"
+            className="px-8 py-2.5 bg-slate-900 text-white rounded-full hover:bg-slate-800 shadow-xl shadow-slate-900/10 flex items-center font-bold disabled:opacity-70 transition-all active:scale-95"
           >
             {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
-            Publish
+            Publish to Directory
           </button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto mt-8 px-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
-                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none text-lg font-serif" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Subtitle</label>
-                        <textarea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg h-24 resize-none" />
-                    </div>
-                </div>
-
+      <div className="max-w-6xl mx-auto mt-8 px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* Main Content Area */}
+        <div className="lg:col-span-8 space-y-8">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Cover Image</label>
-                         <div className="flex space-x-2">
-                            <input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="flex-grow px-4 py-2 border border-slate-300 rounded-lg text-sm" />
-                         </div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Post Foundation</label>
+                        <input 
+                            type="text" 
+                            value={title} 
+                            onChange={(e) => setTitle(e.target.value)} 
+                            placeholder="Enter a captivating title..."
+                            className="w-full px-0 border-none focus:ring-0 text-4xl font-serif font-bold text-slate-900 placeholder-slate-200" 
+                        />
+                        <textarea 
+                            value={subtitle} 
+                            onChange={(e) => setSubtitle(e.target.value)} 
+                            placeholder="Add an enticing subtitle that hooks the reader..."
+                            className="w-full px-0 border-none focus:ring-0 text-xl text-slate-500 h-24 resize-none placeholder-slate-200 font-light" 
+                        />
                     </div>
-                    <div className="flex gap-4">
-                         <div className="flex-1">
-                             <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                             <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
-                                 <option value="article">Article</option>
-                                 <option value="course">Course</option>
-                                 <option value="podcast">Podcast</option>
-                             </select>
-                         </div>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {blocks.map((block) => (
+                    <div key={block.id} className="group relative bg-white p-6 rounded-3xl border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-900/5 transition-all duration-300">
+                        <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 flex space-x-1 z-10">
+                            <button onClick={() => removeBlock(block.id)} className="p-2 bg-white shadow-lg text-slate-400 hover:text-red-500 rounded-full transition-colors border border-slate-100"><Trash2 size={16}/></button>
+                        </div>
+                        
+                        {block.type === 'header' && <input className="w-full font-serif font-bold text-slate-900 border-none outline-none focus:ring-0 text-2xl" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Section Header" />}
+                        {block.type === 'text' && <textarea className="w-full resize-none min-h-[120px] border-none outline-none focus:ring-0 text-slate-700 text-lg font-light leading-relaxed" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Write your narrative..." />}
+                        {block.type === 'image' && (
+                            <div className="space-y-3">
+                                <input className="w-full text-xs font-mono bg-slate-50 rounded-xl px-4 py-3 border border-slate-200" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Image URL" />
+                                {block.content && <img src={block.content} className="w-full rounded-2xl h-48 object-cover border border-slate-100 shadow-inner" />}
+                            </div>
+                        )}
+                        {block.type === 'video' && (
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                    <Youtube className="text-red-600" size={16} />
+                                    <input 
+                                        className="flex-grow text-xs font-mono bg-slate-50 rounded-xl px-4 py-3 border border-slate-200" 
+                                        value={block.meta?.videoId || ''} 
+                                        onChange={(e) => updateBlock(block.id, block.content, { videoId: e.target.value })} 
+                                        placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)" 
+                                    />
+                                </div>
+                                {block.meta?.videoId && (
+                                    <div className="aspect-video w-full rounded-2xl bg-slate-900 flex items-center justify-center text-white/20">
+                                        <PlayCircle size={48} />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {block.type === 'agent' && (
+                            <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex items-center shadow-inner">
+                                <div className="p-3 bg-white rounded-xl mr-4 shadow-sm"><UserCheck className="text-rose-500" /></div>
+                                <div>
+                                    <span className="font-bold text-slate-900 block">{block.content}</span>
+                                    <span className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">Interactive Expert Component</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
+                ))}
+
+                <div className="flex justify-center flex-wrap gap-4 py-12 border-t-2 border-slate-200 mt-12 border-dashed">
+                    <button onClick={() => addBlock('header')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Type size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Header</span></button>
+                    <button onClick={() => addBlock('text')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Layout size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Text</span></button>
+                    <button onClick={() => addBlock('video')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-red-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Video size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Video</span></button>
+                    <button onClick={() => addBlock('image')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Image size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Image</span></button>
+                    <button onClick={() => setShowAgentModal(true)} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><UserCheck size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Expert</span></button>
                 </div>
             </div>
         </div>
 
-        <div className="space-y-4 min-h-[400px]">
-            {blocks.map((block) => (
-                <div key={block.id} className="group relative bg-white p-4 rounded-lg border border-transparent hover:border-slate-300 transition-all">
-                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex space-x-1">
-                         <button onClick={() => removeBlock(block.id)} className="p-1 text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+        {/* Sidebar: Config & Metadata */}
+        <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-6 flex items-center">
+                    <RefreshCw className="mr-2 text-rose-500" size={14} />
+                    Configuration
+                </h3>
+                
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Category Type</label>
+                        <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500/20 outline-none">
+                            <option value="article">Article</option>
+                            <option value="course">Course</option>
+                            <option value="podcast">Podcast</option>
+                            <option value="ebook">Ebook</option>
+                            <option value="guide">Guide</option>
+                        </select>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        <label className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="block text-xs font-bold text-slate-700">Premium Content</span>
+                                <span className="text-[10px] text-slate-400 uppercase tracking-widest">Requires Payment</span>
+                            </div>
+                            <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} className="w-5 h-5 rounded text-rose-600 focus:ring-rose-500 border-slate-300" />
+                        </label>
+                        
+                        {isPremium && (
+                            <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pricing (USD)</label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                        <input type="number" value={price} onChange={(e) => setPrice(parseFloat(e.target.value))} className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Payhip Product Link</label>
+                                    <input 
+                                        type="text" 
+                                        value={payhipUrl} 
+                                        onChange={(e) => setPayhipUrl(e.target.value)} 
+                                        placeholder="https://payhip.com/b/XXXX"
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none" 
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                     
-                    {block.type === 'header' && <input className="w-full font-serif font-bold text-slate-900 border-none outline-none focus:ring-0 text-2xl" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} />}
-                    {block.type === 'text' && <textarea className="w-full resize-y min-h-[100px] border-none outline-none focus:ring-0 text-slate-700 text-lg" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} />}
-                    {block.type === 'image' && <input className="w-full text-sm text-slate-500 border border-slate-200 rounded px-2 py-1" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} />}
-                    {block.type === 'agent' && (
-                        <div className="p-4 bg-rose-50 rounded-xl border border-rose-100 flex items-center">
-                            <UserCheck className="text-rose-500 mr-3" />
-                            <span className="font-bold text-slate-900">{block.content}</span>
-                        </div>
-                    )}
-                </div>
-            ))}
-
-            <div className="flex justify-center space-x-4 py-8 border-t border-slate-200 mt-8 border-dashed">
-                <button onClick={() => addBlock('header')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600"><Type size={20} /><span className="text-xs mt-1">Header</span></button>
-                <button onClick={() => addBlock('text')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600"><Layout size={20} /><span className="text-xs mt-1">Text</span></button>
-                <button onClick={() => setShowAgentModal(true)} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600 group">
-                    <div className="p-2 bg-slate-100 group-hover:bg-rose-100 rounded-full transition-colors">
-                        <UserCheck size={20} />
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Cover Visual URL</label>
+                        <input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none" />
+                        {coverImage && <img src={coverImage} className="mt-4 rounded-2xl aspect-video object-cover shadow-sm" />}
                     </div>
-                    <span className="text-xs mt-1 font-bold">Add Expert</span>
-                </button>
-                <button onClick={() => addBlock('image')} className="flex flex-col items-center p-3 text-slate-500 hover:text-rose-600"><Image size={20} /><span className="text-xs mt-1">Image</span></button>
+
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Search Tags</label>
+                        <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="trust, healing, growth..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Restored YouTube Video Vault Section */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center">
+                        <Youtube className="mr-2 text-red-600" size={14} />
+                        Video Vault
+                    </h3>
+                    <button 
+                        onClick={handleMagicFetchVideos} 
+                        disabled={isFetchingVideos}
+                        className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-widest flex items-center group"
+                    >
+                        {isFetchingVideos ? <Loader2 size={12} className="animate-spin mr-1" /> : <Sparkles size={12} className="mr-1 group-hover:animate-pulse" />}
+                        Magic Fetch
+                    </button>
+                </div>
+
+                {relatedVideos.length > 0 ? (
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {relatedVideos.map((video) => (
+                            <div key={video.id} className="group relative flex items-center p-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-rose-200 transition-all">
+                                <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white">
+                                    <img src={video.thumbnail} className="w-full h-full object-cover" alt="" />
+                                </div>
+                                <div className="ml-3 flex-grow min-w-0">
+                                    <div className="text-[10px] font-bold text-slate-900 line-clamp-1 truncate">{video.title}</div>
+                                    <div className="text-[8px] text-slate-400 uppercase tracking-widest font-black">{video.channelTitle}</div>
+                                </div>
+                                <button 
+                                    onClick={() => removeRelatedVideo(video.id)}
+                                    className="p-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50">
+                        <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm"><Video size={16} className="text-slate-300" /></div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-6 leading-relaxed">Fetch expert YouTube videos to enhance this post.</p>
+                    </div>
+                )}
+                
+                <p className="mt-4 text-[9px] text-slate-400 leading-relaxed italic text-center px-4">
+                    Magic Fetch finds the top 6 most relevant relationship advice videos for your title.
+                </p>
             </div>
         </div>
       </div>
