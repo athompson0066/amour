@@ -46,15 +46,12 @@ const App: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
-    // 1. Load Data
     refreshData().then(() => {
-        // 2. Handle Deep Linking from URL Parameters
         const params = new URLSearchParams(window.location.search);
         const postId = params.get('post');
         const agentId = params.get('agent');
         const embedId = params.get('embed');
         
-        // Handle Embed Mode
         if (embedId) {
             const allAgents = [...getAgents(), ...getAstroAgents()];
             const target = allAgents.find(a => a.id === embedId || a.embedCode === embedId);
@@ -66,24 +63,17 @@ const App: React.FC = () => {
             }
         }
 
-        // Handle Direct Post Link (e.g. for Payhip/Social Media)
         if (postId) {
             getPosts().then(allPosts => {
                 const target = allPosts.find(p => p.id === postId);
                 if (target) {
-                    // Check access before opening
-                    if (target.isPremium && !user?.purchasedContentIds.includes(target.id) && !user?.isSubscriber) {
-                        setPendingPaymentItem(target);
-                        setShowPaymentModal(true);
-                    } else {
-                        setSelectedPost(target);
-                        setCurrentView('article');
-                    }
+                    // We now allow viewing premium posts directly to show the preview
+                    setSelectedPost(target);
+                    setCurrentView('article');
                 }
             });
         }
 
-        // Handle Direct Agent Link
         if (agentId) {
             const allAgents = [...getAgents(), ...getAstroAgents()];
             const target = allAgents.find(a => a.id === agentId);
@@ -152,7 +142,8 @@ const App: React.FC = () => {
   };
 
   const handlePostClick = (post: Post) => {
-    if (!checkAccess(post.id, post.isPremium)) {
+    // Interactive apps still require immediate unlock
+    if (post.id === 'app-1' && !checkAccess(post.id, post.isPremium)) {
         setPendingPaymentItem(post);
         setShowPaymentModal(true);
         return;
@@ -163,9 +154,10 @@ const App: React.FC = () => {
         return;
     }
     
+    // For articles and courses, we ALWAYS allow clicking so they see the PREVIEW
     setSelectedPost(post);
     setCurrentView('article');
-    // Update URL without reloading page
+    
     const url = new URL(window.location.href);
     url.searchParams.set('post', post.id);
     window.history.pushState({}, '', url);
@@ -261,7 +253,6 @@ const App: React.FC = () => {
       setCurrentView('soulmate-sketch');
   };
 
-  // Standalone Embed View (Iframe)
   if (isExternalEmbed && selectedAgent && currentView === 'chat') {
       return <div className="h-screen w-full bg-transparent"><ChatInterface agent={selectedAgent} onBack={() => {}} /></div>;
   }
@@ -270,7 +261,6 @@ const App: React.FC = () => {
     <Layout 
         currentView={currentView} 
         onChangeView={(view) => {
-            // Clear post/agent params when navigating home
             if (view === 'home') {
                 const url = new URL(window.location.href);
                 url.searchParams.delete('post');

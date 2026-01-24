@@ -56,6 +56,7 @@ export interface Post {
   isPremium: boolean;
   price?: number; // if course or premium article
   payhipProductUrl?: string; // Payhip direct link or product code
+  unlockPassword?: string; // Secret key to unlock after purchase
   tags: string[];
   blocks: ContentBlock[];
   relatedVideos?: VideoItem[]; // Added for YouTube integration
@@ -83,6 +84,7 @@ export interface Agent {
   price: string; 
   priceValue?: number; 
   payhipProductUrl?: string; 
+  unlockPassword?: string; // Secret key to unlock after purchase
   isOnline: boolean;
   expertise: string[];
   tools?: AgentTools;

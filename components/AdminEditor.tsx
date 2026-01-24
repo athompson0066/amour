@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown } from 'lucide-react';
+import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown, Key } from 'lucide-react';
 import { Post, ContentBlock, ContentType, Agent, VideoItem, QuizQuestion } from '../types';
 import { savePost, getAgents, getAstroAgents } from '../services/storage';
 import { generateBlogOutline, generateCourseStructure } from '../services/geminiService';
@@ -19,6 +19,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const [isPremium, setIsPremium] = useState(initialPost?.isPremium || false);
   const [price, setPrice] = useState<number>(initialPost?.price || 0);
   const [payhipUrl, setPayhipUrl] = useState(initialPost?.payhipProductUrl || '');
+  const [unlockPassword, setUnlockPassword] = useState(initialPost?.unlockPassword || '');
   const [blocks, setBlocks] = useState<ContentBlock[]>(initialPost?.blocks || []);
   const [relatedVideos, setRelatedVideos] = useState<VideoItem[]>(initialPost?.relatedVideos || []);
   const [coverImage, setCoverImage] = useState(initialPost?.coverImage || `https://picsum.photos/seed/${Date.now()}/800/400`);
@@ -176,6 +177,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           isPremium,
           price: isPremium ? price : undefined,
           payhipProductUrl: isPremium ? payhipUrl : undefined,
+          unlockPassword: isPremium ? unlockPassword : undefined,
           tags: tags.split(',').map(t => t.trim()).filter(t => t),
           blocks,
           relatedVideos: relatedVideos.length > 0 ? relatedVideos : undefined
@@ -193,7 +195,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
-      {/* Modals */}
+      {/* Modals omitted for brevity - assuming they remain the same */}
       {showCourseModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rose-100">
@@ -253,7 +255,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           </div>
       )}
 
-      {/* Sticky Header */}
+      {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-16 z-40 px-6 py-4 flex justify-between items-center shadow-sm">
         <h2 className="text-xl font-bold text-slate-700 flex items-center">
             <div className="p-2 bg-rose-50 rounded-lg mr-3"><Layout className="text-rose-500" size={20} /></div>
@@ -278,7 +280,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
       </div>
 
       <div className="max-w-6xl mx-auto mt-8 px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
         {/* Main Content Area */}
         <div className="lg:col-span-8 space-y-8">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
@@ -307,26 +308,11 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                     <div key={block.id} className="group relative bg-white p-6 rounded-3xl border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-900/5 transition-all duration-300">
                         <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 flex items-center space-x-1 z-10 scale-90 origin-top-right">
                             <div className="flex flex-col space-y-1 mr-1">
-                                <button 
-                                    onClick={() => moveBlock(index, 'up')} 
-                                    disabled={index === 0}
-                                    className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                    <ChevronUp size={14}/>
-                                </button>
-                                <button 
-                                    onClick={() => moveBlock(index, 'down')} 
-                                    disabled={index === blocks.length - 1}
-                                    className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                    <ChevronDown size={14}/>
-                                </button>
+                                <button onClick={() => moveBlock(index, 'up')} disabled={index === 0} className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronUp size={14}/></button>
+                                <button onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1} className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronDown size={14}/></button>
                             </div>
-                            <button onClick={() => removeBlock(block.id)} className="p-2.5 bg-white shadow-lg text-slate-400 hover:text-red-500 rounded-full transition-colors border border-slate-100">
-                                <Trash2 size={16}/>
-                            </button>
+                            <button onClick={() => removeBlock(block.id)} className="p-2.5 bg-white shadow-lg text-slate-400 hover:text-red-500 rounded-full transition-colors border border-slate-100"><Trash2 size={16}/></button>
                         </div>
-                        
                         {block.type === 'header' && <input className="w-full font-serif font-bold text-slate-900 border-none outline-none focus:ring-0 text-2xl" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Section Header" />}
                         {block.type === 'text' && <textarea className="w-full resize-none min-h-[120px] border-none outline-none focus:ring-0 text-slate-700 text-lg font-light leading-relaxed" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Write your narrative..." />}
                         {block.type === 'image' && (
@@ -337,166 +323,56 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                         )}
                         {block.type === 'video' && (
                             <div className="space-y-3">
-                                <div className="flex items-center space-x-2">
-                                    <Youtube className="text-red-600" size={16} />
-                                    <input 
-                                        className="flex-grow text-xs font-mono bg-slate-50 rounded-xl px-4 py-3 border border-slate-200" 
-                                        value={block.meta?.videoId || ''} 
-                                        onChange={(e) => updateBlock(block.id, block.content, { videoId: e.target.value })} 
-                                        placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)" 
-                                    />
-                                </div>
-                                {block.meta?.videoId && (
-                                    <div className="aspect-video w-full rounded-2xl bg-slate-900 flex items-center justify-center text-white/20">
-                                        <PlayCircle size={48} />
-                                    </div>
-                                )}
+                                <div className="flex items-center space-x-2"><Youtube className="text-red-600" size={16} /><input className="flex-grow text-xs font-mono bg-slate-50 rounded-xl px-4 py-3 border border-slate-200" value={block.meta?.videoId || ''} onChange={(e) => updateBlock(block.id, block.content, { videoId: e.target.value })} placeholder="YouTube Video ID" /></div>
+                                {block.meta?.videoId && <div className="aspect-video w-full rounded-2xl bg-slate-900 flex items-center justify-center text-white/20"><PlayCircle size={48} /></div>}
                             </div>
                         )}
                         {block.type === 'agent' && (
                             <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex items-center shadow-inner">
                                 <div className="p-3 bg-white rounded-xl mr-4 shadow-sm"><UserCheck className="text-rose-500" /></div>
-                                <div>
-                                    <span className="font-bold text-slate-900 block">{block.content}</span>
-                                    <span className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">Interactive Expert Component</span>
-                                </div>
+                                <div><span className="font-bold text-slate-900 block">{block.content}</span><span className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">Interactive Expert Component</span></div>
                             </div>
                         )}
                         {block.type === 'quiz' && (
                             <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 shadow-inner space-y-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="p-2 bg-indigo-600 rounded-lg text-white"><ListChecks size={18} /></div>
-                                        <h4 className="text-sm font-black text-indigo-900 uppercase tracking-widest">Module Quiz</h4>
-                                    </div>
-                                    <button onClick={() => addQuestionToQuiz(block.id)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center bg-white px-3 py-1.5 rounded-full shadow-sm">
-                                        <Plus size={14} className="mr-1" /> Add Question
-                                    </button>
+                                    <div className="flex items-center space-x-2"><div className="p-2 bg-indigo-600 rounded-lg text-white"><ListChecks size={18} /></div><h4 className="text-sm font-black text-indigo-900 uppercase tracking-widest">Module Quiz</h4></div>
+                                    <button onClick={() => addQuestionToQuiz(block.id)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center bg-white px-3 py-1.5 rounded-full shadow-sm"><Plus size={14} className="mr-1" /> Add Question</button>
                                 </div>
-                                
                                 <div className="space-y-6">
                                     {block.meta?.questions?.map((q: QuizQuestion, qIdx: number) => (
                                         <div key={qIdx} className="bg-white p-6 rounded-2xl border border-indigo-100 shadow-sm relative group/q">
-                                            <button onClick={() => removeQuestionFromQuiz(block.id, qIdx)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
-                                                <Trash2 size={16} />
-                                            </button>
-                                            
-                                            <div className="mb-4">
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Question {qIdx + 1}</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={q.question} 
-                                                    onChange={(e) => updateQuizQuestion(block.id, qIdx, 'question', e.target.value)}
-                                                    className="w-full text-sm font-bold text-slate-900 border-b border-slate-100 focus:border-indigo-500 outline-none pb-1"
-                                                />
-                                            </div>
-                                            
+                                            <button onClick={() => removeQuestionFromQuiz(block.id, qIdx)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                            <div className="mb-4"><label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Question {qIdx + 1}</label><input type="text" value={q.question} onChange={(e) => updateQuizQuestion(block.id, qIdx, 'question', e.target.value)} className="w-full text-sm font-bold text-slate-900 border-b border-slate-100 focus:border-indigo-500 outline-none pb-1" /></div>
                                             <div className="space-y-2">
                                                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Options & Answer</label>
                                                 {q.options.map((opt, oIdx) => (
                                                     <div key={oIdx} className="flex items-center space-x-3">
-                                                        <input 
-                                                            type="radio" 
-                                                            name={`correct-${block.id}-${qIdx}`} 
-                                                            checked={q.correctAnswerIndex === oIdx} 
-                                                            onChange={() => updateQuizQuestion(block.id, qIdx, 'correctAnswerIndex', oIdx)}
-                                                            className="w-4 h-4 text-indigo-600"
-                                                        />
-                                                        <input 
-                                                            type="text" 
-                                                            value={opt} 
-                                                            onChange={(e) => {
-                                                                const newOptions = [...q.options];
-                                                                newOptions[oIdx] = e.target.value;
-                                                                updateQuizQuestion(block.id, qIdx, 'options', newOptions);
-                                                            }}
-                                                            className={`flex-grow text-xs px-3 py-2 rounded-lg border outline-none transition-all ${q.correctAnswerIndex === oIdx ? 'bg-indigo-50 border-indigo-200 text-indigo-900' : 'bg-slate-50 border-slate-100'}`}
-                                                        />
-                                                        {q.options.length > 2 && (
-                                                            <button 
-                                                                onClick={() => {
-                                                                    const newOptions = q.options.filter((_, i) => i !== oIdx);
-                                                                    updateQuizQuestion(block.id, qIdx, 'options', newOptions);
-                                                                }}
-                                                                className="p-1.5 text-slate-300 hover:text-red-400"
-                                                            >
-                                                                <X size={12} />
-                                                            </button>
-                                                        )}
+                                                        <input type="radio" name={`correct-${block.id}-${qIdx}`} checked={q.correctAnswerIndex === oIdx} onChange={() => updateQuizQuestion(block.id, qIdx, 'correctAnswerIndex', oIdx)} className="w-4 h-4 text-indigo-600" />
+                                                        <input type="text" value={opt} onChange={(e) => { const newOptions = [...q.options]; newOptions[oIdx] = e.target.value; updateQuizQuestion(block.id, qIdx, 'options', newOptions); }} className={`flex-grow text-xs px-3 py-2 rounded-lg border outline-none transition-all ${q.correctAnswerIndex === oIdx ? 'bg-indigo-50 border-indigo-200 text-indigo-900' : 'bg-slate-50 border-slate-100'}`} />
+                                                        {q.options.length > 2 && <button onClick={() => { const newOptions = q.options.filter((_, i) => i !== oIdx); updateQuizQuestion(block.id, qIdx, 'options', newOptions); }} className="p-1.5 text-slate-300 hover:text-red-400"><X size={12} /></button>}
                                                     </div>
                                                 ))}
-                                                <button 
-                                                    onClick={() => {
-                                                        const newOptions = [...q.options, `Option ${q.options.length + 1}`];
-                                                        updateQuizQuestion(block.id, qIdx, 'options', newOptions);
-                                                    }}
-                                                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-600 mt-2 flex items-center"
-                                                >
-                                                    <Plus size={10} className="mr-1" /> Add Option
-                                                </button>
+                                                <button onClick={() => { const newOptions = [...q.options, `Option ${q.options.length + 1}`]; updateQuizQuestion(block.id, qIdx, 'options', newOptions); }} className="text-[10px] font-bold text-indigo-400 hover:text-indigo-600 mt-2 flex items-center"><Plus size={10} className="mr-1" /> Add Option</button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
-                        {block.type === 'embed' && (
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center space-x-2 text-indigo-600">
-                                        <Code size={18} />
-                                        <span className="text-xs font-black uppercase tracking-widest">Custom Embed (Spotify, Iframe, etc)</span>
-                                    </div>
-                                </div>
-                                <textarea 
-                                    className="w-full font-mono text-xs bg-slate-900 text-emerald-400 rounded-xl px-4 py-4 border border-slate-700 h-32 focus:ring-2 focus:ring-indigo-500/20" 
-                                    value={block.meta?.html || ''} 
-                                    onChange={(e) => updateBlock(block.id, block.content, { html: e.target.value })} 
-                                    placeholder="Paste your embed code here (<iframe>...</iframe>)" 
-                                />
-                                <p className="text-[10px] text-slate-400 italic">This code will be rendered exactly as pasted in the live view.</p>
-                            </div>
-                        )}
-                        {block.type === 'pdf' && (
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-2 text-rose-600 mb-2">
-                                    <FileDown size={18} />
-                                    <span className="text-xs font-black uppercase tracking-widest">PDF Download Widget</span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Button Label</label>
-                                        <input 
-                                            className="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500/20 outline-none" 
-                                            value={block.content} 
-                                            onChange={(e) => updateBlock(block.id, e.target.value)} 
-                                            placeholder="e.g. Download Course Guide" 
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">PDF URL</label>
-                                        <input 
-                                            className="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500/20 outline-none" 
-                                            value={block.meta?.url || ''} 
-                                            onChange={(e) => updateBlock(block.id, block.content, { url: e.target.value })} 
-                                            placeholder="https://example.com/file.pdf" 
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {block.type === 'embed' && <div className="space-y-3"><div className="flex items-center justify-between mb-2"><div className="flex items-center space-x-2 text-indigo-600"><Code size={18} /><span className="text-xs font-black uppercase tracking-widest">Custom Embed</span></div></div><textarea className="w-full font-mono text-xs bg-slate-900 text-emerald-400 rounded-xl px-4 py-4 border border-slate-700 h-32" value={block.meta?.html || ''} onChange={(e) => updateBlock(block.id, block.content, { html: e.target.value })} placeholder="<iframe>...</iframe>" /></div>}
+                        {block.type === 'pdf' && <div className="space-y-4"><div className="flex items-center space-x-2 text-rose-600 mb-2"><FileDown size={18} /><span className="text-xs font-black uppercase tracking-widest">PDF Widget</span></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><input className="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg outline-none" value={block.content} onChange={(e) => updateBlock(block.id, e.target.value)} placeholder="Button Label" /></div><div><input className="w-full text-sm px-4 py-2 border border-slate-200 rounded-lg outline-none" value={block.meta?.url || ''} onChange={(e) => updateBlock(block.id, block.content, { url: e.target.value })} placeholder="PDF URL" /></div></div></div>}
                     </div>
                 ))}
-
                 <div className="flex justify-center flex-wrap gap-4 py-12 border-t-2 border-slate-200 mt-12 border-dashed">
-                    <button onClick={() => addBlock('header')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Type size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Header</span></button>
-                    <button onClick={() => addBlock('text')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Layout size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Text</span></button>
-                    <button onClick={() => addBlock('video')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-red-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Video size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Video</span></button>
-                    <button onClick={() => addBlock('image')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Image size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Image</span></button>
-                    <button onClick={() => setShowAgentModal(true)} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><UserCheck size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Expert</span></button>
-                    <button onClick={() => addBlock('quiz')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><ListChecks size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Quiz</span></button>
-                    <button onClick={() => addBlock('embed')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><Code size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Embed</span></button>
-                    <button onClick={() => addBlock('pdf')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm group-hover:shadow-md border border-slate-100 mb-2"><FileDown size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">PDF</span></button>
+                    <button onClick={() => addBlock('header')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><Type size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Header</span></button>
+                    <button onClick={() => addBlock('text')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><Layout size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Text</span></button>
+                    <button onClick={() => addBlock('video')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-red-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><Video size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Video</span></button>
+                    <button onClick={() => addBlock('image')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><Image size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Image</span></button>
+                    <button onClick={() => setShowAgentModal(true)} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><UserCheck size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Expert</span></button>
+                    <button onClick={() => addBlock('quiz')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><ListChecks size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Quiz</span></button>
+                    <button onClick={() => addBlock('embed')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-indigo-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><Code size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">Embed</span></button>
+                    <button onClick={() => addBlock('pdf')} className="group flex flex-col items-center p-4 text-slate-500 hover:text-rose-600 transition-all"><div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-2"><FileDown size={20} /></div><span className="text-[10px] font-black uppercase tracking-widest">PDF</span></button>
                 </div>
             </div>
         </div>
@@ -504,15 +380,11 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
         {/* Sidebar: Config & Metadata */}
         <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-6 flex items-center">
-                    <RefreshCw className="mr-2 text-rose-500" size={14} />
-                    Configuration
-                </h3>
-                
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-6 flex items-center"><RefreshCw className="mr-2 text-rose-500" size={14} />Configuration</h3>
                 <div className="space-y-6">
                     <div>
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Category Type</label>
-                        <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500/20 outline-none">
+                        <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none">
                             <option value="article">Article</option>
                             <option value="course">Course</option>
                             <option value="podcast">Podcast</option>
@@ -523,96 +395,50 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
                         <label className="flex items-center justify-between cursor-pointer">
-                            <div>
-                                <span className="block text-xs font-bold text-slate-700">Premium Content</span>
-                                <span className="text-[10px] text-slate-400 uppercase tracking-widest">Requires Payment</span>
-                            </div>
+                            <div><span className="block text-xs font-bold text-slate-700">Premium Content</span><span className="text-[10px] text-slate-400 uppercase tracking-widest">Requires Payment</span></div>
                             <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} className="w-5 h-5 rounded text-rose-600 focus:ring-rose-500 border-slate-300" />
                         </label>
-                        
                         {isPremium && (
                             <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pricing (USD)</label>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                        <input type="number" value={price} onChange={(e) => setPrice(parseFloat(e.target.value))} className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none" />
-                                    </div>
+                                    <div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} /><input type="number" value={price} onChange={(e) => setPrice(parseFloat(e.target.value))} className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none" /></div>
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Payhip Product Link</label>
-                                    <input 
-                                        type="text" 
-                                        value={payhipUrl} 
-                                        onChange={(e) => setPayhipUrl(e.target.value)} 
-                                        placeholder="https://payhip.com/b/XXXX"
-                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none" 
-                                    />
+                                    <input type="text" value={payhipUrl} onChange={(e) => setPayhipUrl(e.target.value)} placeholder="https://payhip.com/b/XXXX" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none" />
+                                </div>
+                                <div className="pt-2 border-t border-slate-200">
+                                    <label className="block text-[10px] font-bold text-rose-500 uppercase mb-1 flex items-center"><Key size={10} className="mr-1" /> Access Unlock Password</label>
+                                    <input type="text" value={unlockPassword} onChange={(e) => setUnlockPassword(e.target.value)} placeholder="Secret key for user entry" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-rose-500/20" />
+                                    <p className="text-[8px] text-slate-400 mt-1 italic">Provide this key to customers in your Payhip purchase confirmation.</p>
                                 </div>
                             </div>
                         )}
                     </div>
-                    
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Cover Visual URL</label>
-                        <input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none" />
-                        {coverImage && <img src={coverImage} className="mt-4 rounded-2xl aspect-video object-cover shadow-sm" />}
-                    </div>
-
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Search Tags</label>
-                        <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="trust, healing, growth..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
-                    </div>
+                    <div><label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Cover Visual URL</label><input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none" />{coverImage && <img src={coverImage} className="mt-4 rounded-2xl aspect-video object-cover shadow-sm" />}</div>
+                    <div><label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Search Tags</label><input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="trust, healing, growth..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" /></div>
                 </div>
             </div>
 
-            {/* YouTube Video Vault Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center">
-                        <Youtube className="mr-2 text-red-600" size={14} />
-                        Video Vault
-                    </h3>
-                    <button 
-                        onClick={handleMagicFetchVideos} 
-                        disabled={isFetchingVideos}
-                        className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-widest flex items-center group"
-                    >
-                        {isFetchingVideos ? <Loader2 size={12} className="animate-spin mr-1" /> : <Sparkles size={12} className="mr-1 group-hover:animate-pulse" />}
-                        Magic Fetch
-                    </button>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center"><Youtube className="mr-2 text-red-600" size={14} />Video Vault</h3>
+                    <button onClick={handleMagicFetchVideos} disabled={isFetchingVideos} className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-widest flex items-center group">{isFetchingVideos ? <Loader2 size={12} className="animate-spin mr-1" /> : <Sparkles size={12} className="mr-1 group-hover:animate-pulse" />}Magic Fetch</button>
                 </div>
-
                 {relatedVideos.length > 0 ? (
                     <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                         {relatedVideos.map((video) => (
                             <div key={video.id} className="group relative flex items-center p-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-rose-200 transition-all">
-                                <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white">
-                                    <img src={video.thumbnail} className="w-full h-full object-cover" alt="" />
-                                </div>
-                                <div className="ml-3 flex-grow min-w-0">
-                                    <div className="text-[10px] font-bold text-slate-900 line-clamp-1 truncate">{video.title}</div>
-                                    <div className="text-[8px] text-slate-400 uppercase tracking-widest font-black">{video.channelTitle}</div>
-                                </div>
-                                <button 
-                                    onClick={() => removeRelatedVideo(video.id)}
-                                    className="p-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
+                                <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white"><img src={video.thumbnail} className="w-full h-full object-cover" alt="" /></div>
+                                <div className="ml-3 flex-grow min-w-0"><div className="text-[10px] font-bold text-slate-900 line-clamp-1 truncate">{video.title}</div><div className="text-[8px] text-slate-400 uppercase tracking-widest font-black">{video.channelTitle}</div></div>
+                                <button onClick={() => removeRelatedVideo(video.id)} className="p-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all"><Trash2 size={12} /></button>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50">
-                        <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm"><Video size={16} className="text-slate-300" /></div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-6 leading-relaxed">Fetch expert YouTube videos to enhance this post.</p>
-                    </div>
+                    <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50"><div className="bg-white w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm"><Video size={16} className="text-slate-300" /></div><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-6 leading-relaxed">Fetch YouTube videos.</p></div>
                 )}
-                
-                <p className="mt-4 text-[9px] text-slate-400 leading-relaxed italic text-center px-4">
-                    Magic Fetch finds the top 6 most relevant relationship advice videos for your title.
-                </p>
             </div>
         </div>
       </div>

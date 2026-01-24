@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, CheckCircle, ShieldCheck, AlertCircle, Loader2, Lock, Sparkles, CreditCard, ExternalLink } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, AlertCircle, Loader2, Lock, Sparkles, CreditCard, ExternalLink, Key, ChevronRight } from 'lucide-react';
 import { Post, User, Agent } from '../types';
 import { loadPayhipSDK } from '../services/payhipService';
 
@@ -13,8 +13,11 @@ interface PaymentModalProps {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSuccess }) => {
-  const [step, setStep] = useState<'review' | 'success'>('review');
+  const [step, setStep] = useState<'review' | 'password-entry' | 'success'>('review');
   const [sdkReady, setSdkReady] = useState(false);
+  const [enteredPassword, setEnteredPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const isPost = 'type' in item;
   const itemTitle = isPost ? (item as Post).title : (item as Agent).name;
@@ -22,6 +25,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
   const itemTypeLabel = isPost ? (item as Post).type : 'Consultation';
   const itemImage = isPost ? (item as Post).coverImage : (item as Agent).avatar;
   const payhipUrl = item.payhipProductUrl;
+  const correctPassword = item.unlockPassword;
 
   // Preload Payhip SDK as soon as modal mounts
   useEffect(() => {
@@ -30,10 +34,31 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
       .catch(err => console.warn("Payhip SDK failed to load, falling back to direct link mode.", err));
   }, []);
 
+  const handleValidatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enteredPassword.trim()) return;
+
+    setIsValidating(true);
+    setPasswordError(null);
+
+    // Artificial delay for "security check" feeling
+    await new Promise(r => setTimeout(r, 800));
+
+    if (correctPassword && enteredPassword.trim() === correctPassword.trim()) {
+        setStep('success');
+        setTimeout(() => {
+            onSuccess();
+        }, 1500);
+    } else {
+        setPasswordError("Access code invalid. Please check your purchase email.");
+        setIsValidating(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative border border-white">
-        {step === 'review' && (
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-white">
+        {step !== 'success' && (
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 p-2 hover:bg-slate-100 rounded-full transition-colors"
@@ -52,8 +77,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
               <p className="text-slate-500 text-sm mt-1">Unlock premium content via Payhip.</p>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 flex items-start space-x-4">
-              <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-white shadow-sm bg-slate-200">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6 flex items-start space-x-4">
+              <div className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden border border-white shadow-sm bg-slate-200">
                 <img src={itemImage} className="w-full h-full object-cover" alt="Cover" />
               </div>
               <div className="flex-grow">
@@ -67,31 +92,27 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
 
             <div className="space-y-3">
               {payhipUrl ? (
-                /* 
-                   We use a real <a> tag here with 'payhip-buy-button' class.
-                   The Payhip SDK will automatically detect this and open the overlay.
-                   By using a real link, we bypass most popup blocker restrictions.
-                */
                 <a 
                   href={payhipUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="payhip-buy-button w-full flex items-center justify-center py-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg font-bold text-sm"
+                  className="payhip-buy-button w-full flex items-center justify-center py-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-lg font-bold text-sm"
                 >
                   <ExternalLink className="mr-2" size={18} />
                   Buy Now via Payhip
                 </a>
               ) : (
-                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-xs italic text-center">
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-800 text-xs italic text-center">
                   Payhip link not found. Contact administrator.
                 </div>
               )}
               
               <button 
-                onClick={onSuccess}
-                className="w-full flex items-center justify-center py-3 bg-white text-slate-400 hover:text-slate-600 transition-colors font-medium text-xs border border-dashed border-slate-200 rounded-xl"
+                onClick={() => setStep('password-entry')}
+                className="w-full flex items-center justify-center py-3.5 bg-white text-rose-600 hover:bg-rose-50 transition-colors font-bold text-xs border border-rose-100 rounded-2xl"
               >
-                Already purchased? Refresh access
+                <Key className="mr-2" size={14} />
+                I already have an access code
               </button>
             </div>
             
@@ -101,6 +122,65 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
                 <span>Secure SSL Encryption</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {step === 'password-entry' && (
+          <div className="p-8">
+             <button 
+                onClick={() => setStep('review')}
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold uppercase tracking-widest flex items-center mb-6"
+             >
+                <ChevronRight size={14} className="rotate-180 mr-1" />
+                Back
+             </button>
+
+             <div className="text-center mb-8">
+                <div className="bg-indigo-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Key className="text-indigo-600" size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Enter Access Code</h3>
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+                    Please enter the secret password provided in your Payhip purchase confirmation email.
+                </p>
+             </div>
+
+             <form onSubmit={handleValidatePassword} className="space-y-4">
+                <div className="relative">
+                    <input 
+                        type="text"
+                        autoFocus
+                        value={enteredPassword}
+                        onChange={(e) => setEnteredPassword(e.target.value)}
+                        placeholder="e.g. LOVE-2024-XXXX"
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-center font-mono text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all uppercase"
+                    />
+                </div>
+
+                {passwordError && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 bg-rose-50 text-rose-700 text-[10px] font-bold text-center rounded-xl border border-rose-100 flex items-center justify-center"
+                    >
+                        <AlertCircle size={14} className="mr-2" />
+                        {passwordError}
+                    </motion.div>
+                )}
+
+                <button 
+                    type="submit"
+                    disabled={!enteredPassword.trim() || isValidating}
+                    className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center"
+                >
+                    {isValidating ? <Loader2 className="animate-spin mr-2" /> : null}
+                    Unlock Content
+                </button>
+             </form>
+
+             <p className="text-[10px] text-slate-400 text-center mt-6 italic">
+                Check your email (including spam) for the unlock key.
+             </p>
           </div>
         )}
 
@@ -114,7 +194,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
               <CheckCircle size={40} />
             </motion.div>
             <h3 className="text-2xl font-serif font-bold text-slate-900">Access Granted</h3>
-            <p className="text-slate-500 text-sm mt-3">Thank you for your purchase. Enjoy your content!</p>
+            <p className="text-slate-500 text-sm mt-3">Your code has been verified. Welcome!</p>
             <div className="mt-8 flex justify-center">
               <Loader2 className="animate-spin text-rose-500" size={24} />
             </div>

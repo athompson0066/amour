@@ -5,7 +5,7 @@ import {
     ArrowLeft, Calendar, Clock, Share2, Lock, CheckCircle, ChevronRight, Star, 
     BookOpen, Check, Map, Lightbulb, ListChecks, PenTool, BrainCircuit, 
     PlayCircle, X, Youtube, Twitter, Facebook, Linkedin, Link, MessageCircle, UserCheck, MessageSquare, Phone, AlertTriangle, Video, HelpCircle, ShieldCheck, FileDown, ExternalLink,
-    Play, Pause, Volume2, Music, Disc, Loader2
+    Play, Pause, Volume2, Music, Disc, Loader2, Sparkles, Key
 } from 'lucide-react';
 import { ParallaxHeader, FadeIn, StaggerGrid, StaggerItem } from './Animated';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -413,7 +413,7 @@ const ExpertEmbed: React.FC<{ agentIdOrSlug: string }> = ({ agentIdOrSlug }) => 
 };
 
 // Advanced Content Renderer with Integrated Shortcode Injection
-const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
+const RichTextRenderer: React.FC<{ content: string; isTeaser?: boolean }> = ({ content, isTeaser }) => {
     const allAgents = [...getAgents(), ...getAstroAgents()];
     const agentIdentifiers = allAgents.flatMap(a => [
         `[agent:${a.id}]`,
@@ -430,7 +430,7 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
     const parts = content.split(combinedRegex);
 
     return (
-        <div className="space-y-4 text-lg text-slate-700 leading-relaxed font-light">
+        <div className={`space-y-4 text-lg text-slate-700 leading-relaxed font-light relative ${isTeaser ? 'max-h-[600px] overflow-hidden' : ''}`}>
             {parts.map((part, index) => {
                 const isAgent = agentIdentifiers.some(id => id === part);
                 if (isAgent) {
@@ -506,6 +506,9 @@ const RichTextRenderer: React.FC<{ content: string }> = ({ content }) => {
                     </React.Fragment>
                 );
             })}
+            {isTeaser && (
+                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+            )}
         </div>
     );
 };
@@ -536,7 +539,6 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
       setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  // Group blocks for courses logic
   const courseSections = useMemo(() => {
     if (!isCourse) return [post.blocks]; 
     const sections: ContentBlock[][] = [];
@@ -590,6 +592,21 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
 
   return (
     <div className="bg-white min-h-screen pb-20 relative">
+      {!hasAccess && post.isPremium && (
+          <div className="fixed top-20 left-0 right-0 z-[45] flex justify-center pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass bg-indigo-600/90 text-white px-6 py-2.5 rounded-full flex items-center space-x-3 shadow-2xl border border-indigo-400 pointer-events-auto backdrop-blur-md"
+              >
+                  <Sparkles size={16} className="text-yellow-300 animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Free Preview Mode</span>
+                  <div className="w-px h-4 bg-white/20" />
+                  <button onClick={onUnlock} className="text-xs font-black hover:text-yellow-300 transition-colors">Unlock Full Content →</button>
+              </motion.div>
+          </div>
+      )}
+
       {isCourse && hasAccess && (
           <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-xl border-b border-rose-100 shadow-sm px-6 py-4 flex items-center justify-between transition-all">
               <div className="flex items-center space-x-6">
@@ -598,7 +615,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                      <span>Your Roadmap</span>
                   </div>
                   <div className="hidden md:block w-64 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-rose-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(244,63,94,0.4)]" style={{ width: `${progressPercentage}%` }}></div>
+                      <div className="h-full bg-rose-500 transition-all duration-1000 ease-out shadow-[0_0_100px_rgba(244,63,94,0.4)]" style={{ width: `${progressPercentage}%` }}></div>
                   </div>
               </div>
               <div className="text-xs font-bold text-slate-500">
@@ -625,21 +642,62 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
 
       <article className="max-w-3xl mx-auto px-6 py-16">
         {courseSections.map((section, sectionIndex) => {
-            // Strict Gating Logic: Hide future sections
-            if (isCourse && sectionIndex > completedSections) return null;
+            // Updated Gating Logic: 
+            // - If post has multiple sections, show index 0 AND 1 as preview.
+            // - If post has only one section, show index 0 but apply fade-out to last block.
+            const teaserLimit = courseSections.length > 1 ? 1 : 0;
+            const isGated = !hasAccess && post.isPremium && sectionIndex > teaserLimit;
+            
+            // If it's a course and the user is paid up, only show sections they reached
+            if (isCourse && hasAccess && sectionIndex > completedSections) return null;
 
-            if (!hasAccess && post.isPremium && sectionIndex > 0) {
-                if (sectionIndex === 1) {
+            if (isGated) {
+                // Show the paywall at the first gated index
+                if (sectionIndex === teaserLimit + 1) {
                     return (
-                        <FadeIn key="paywall" className="relative mt-12 p-16 bg-gradient-to-br from-rose-50 to-white rounded-[3rem] border border-rose-100 text-center overflow-hidden shadow-2xl">
-                            <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 transform rotate-3 shadow-lg">
+                        <FadeIn key="paywall" className="relative mt-4 p-16 bg-gradient-to-br from-indigo-50/50 to-white rounded-[4rem] border border-indigo-100 text-center overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 right-0 p-8 opacity-5">
+                                <Sparkles size={120} className="text-indigo-600" />
+                            </div>
+                            <div className="w-20 h-20 bg-white shadow-xl text-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 transform -rotate-3 ring-1 ring-indigo-50">
                                 <Lock size={32} />
                             </div>
-                            <h3 className="text-3xl font-serif font-bold text-slate-900 mb-4">Complete Your Journey</h3>
-                            <p className="text-slate-600 mb-10 max-w-sm mx-auto">This specialized material is part of our premium catalog. Unlock full access to continue.</p>
-                            <button onClick={onUnlock} className="bg-rose-600 text-white px-10 py-4 rounded-full font-bold hover:bg-rose-700 transition-all hover:scale-105 shadow-xl shadow-rose-900/20">
-                                Unlock Now for ${post.price || '9.99'}
-                            </button>
+                            <h3 className="text-4xl font-serif font-bold text-slate-900 mb-4 tracking-tight">Unlock the Full Experience</h3>
+                            <p className="text-slate-600 mb-10 max-w-sm mx-auto leading-relaxed">
+                                You've explored the introduction. Unlock the remaining <strong>{courseSections.length - sectionIndex} sections</strong>, interactive exercises, and expert video library.
+                            </p>
+                            
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                                <button 
+                                    onClick={onUnlock} 
+                                    className="w-full sm:w-auto bg-indigo-600 text-white px-10 py-5 rounded-full font-black text-sm hover:bg-indigo-700 transition-all hover:scale-105 shadow-xl shadow-indigo-900/20 flex items-center justify-center"
+                                >
+                                    Unlock Now for ${post.price || '9.99'}
+                                    <ChevronRight size={18} className="ml-2" />
+                                </button>
+                                <button 
+                                    onClick={onUnlock}
+                                    className="w-full sm:w-auto bg-white border border-slate-200 text-slate-600 px-8 py-5 rounded-full font-bold text-sm hover:bg-slate-50 transition-all flex items-center justify-center"
+                                >
+                                    <Key size={18} className="mr-2" />
+                                    Have a Code?
+                                </button>
+                            </div>
+                            
+                            <div className="flex flex-wrap justify-center gap-6 pt-6 border-t border-indigo-100/50">
+                                <div className="flex items-center text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+                                    <CheckCircle size={14} className="mr-1.5" />
+                                    Lifetime Access
+                                </div>
+                                <div className="flex items-center text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+                                    <CheckCircle size={14} className="mr-1.5" />
+                                    Mobile Friendly
+                                </div>
+                                <div className="flex items-center text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+                                    <CheckCircle size={14} className="mr-1.5" />
+                                    Certification
+                                </div>
+                            </div>
                         </FadeIn>
                     );
                 }
@@ -651,12 +709,15 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
 
             return (
                 <div key={sectionIndex} id={`section-${sectionIndex}`} className="mb-20 scroll-mt-40">
-                    {section.map((block) => {
+                    {section.map((block, blockIdx) => {
+                        // Apply fade out to the last block of the preview teaser section
+                        const isLastBlockOfTeaser = !hasAccess && post.isPremium && sectionIndex === teaserLimit && blockIdx === section.length - 1;
+
                         switch(block.type) {
                             case 'header':
                                 return <FadeIn key={block.id}><h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mt-16 mb-8 leading-tight">{block.content}</h2></FadeIn>;
                             case 'text':
-                                return <FadeIn key={block.id} className="mb-10"><RichTextRenderer content={block.content} /></FadeIn>;
+                                return <FadeIn key={block.id} className="mb-10"><RichTextRenderer content={block.content} isTeaser={isLastBlockOfTeaser} /></FadeIn>;
                             case 'quote':
                                 return (
                                     <FadeIn key={block.id}>
