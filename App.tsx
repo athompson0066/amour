@@ -46,11 +46,15 @@ const App: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
-    // Check for External Embed Request via URL (?embed=agentId)
-    const params = new URLSearchParams(window.location.search);
-    const embedId = params.get('embed');
-    
+    // 1. Load Data
     refreshData().then(() => {
+        // 2. Handle Deep Linking from URL Parameters
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('post');
+        const agentId = params.get('agent');
+        const embedId = params.get('embed');
+        
+        // Handle Embed Mode
         if (embedId) {
             const allAgents = [...getAgents(), ...getAstroAgents()];
             const target = allAgents.find(a => a.id === embedId || a.embedCode === embedId);
@@ -58,6 +62,39 @@ const App: React.FC = () => {
                 setSelectedAgent(target);
                 setIsExternalEmbed(true);
                 setCurrentView('chat');
+                return;
+            }
+        }
+
+        // Handle Direct Post Link (e.g. for Payhip/Social Media)
+        if (postId) {
+            getPosts().then(allPosts => {
+                const target = allPosts.find(p => p.id === postId);
+                if (target) {
+                    // Check access before opening
+                    if (target.isPremium && !user?.purchasedContentIds.includes(target.id) && !user?.isSubscriber) {
+                        setPendingPaymentItem(target);
+                        setShowPaymentModal(true);
+                    } else {
+                        setSelectedPost(target);
+                        setCurrentView('article');
+                    }
+                }
+            });
+        }
+
+        // Handle Direct Agent Link
+        if (agentId) {
+            const allAgents = [...getAgents(), ...getAstroAgents()];
+            const target = allAgents.find(a => a.id === agentId);
+            if (target) {
+                if (!user?.purchasedContentIds.includes(target.id) && !user?.isSubscriber) {
+                    setPendingPaymentItem(target);
+                    setShowPaymentModal(true);
+                } else {
+                    setSelectedAgent(target);
+                    setCurrentView('chat');
+                }
             }
         }
     });
@@ -128,6 +165,10 @@ const App: React.FC = () => {
     
     setSelectedPost(post);
     setCurrentView('article');
+    // Update URL without reloading page
+    const url = new URL(window.location.href);
+    url.searchParams.set('post', post.id);
+    window.history.pushState({}, '', url);
     window.scrollTo(0, 0);
   };
 
@@ -228,7 +269,16 @@ const App: React.FC = () => {
   return (
     <Layout 
         currentView={currentView} 
-        onChangeView={setCurrentView} 
+        onChangeView={(view) => {
+            // Clear post/agent params when navigating home
+            if (view === 'home') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('post');
+                url.searchParams.delete('agent');
+                window.history.pushState({}, '', url);
+            }
+            setCurrentView(view);
+        }} 
         isAdmin={isAdminMode}
         isAdminAuthenticated={isAdminAuth}
         toggleAdmin={handleToggleAdmin}
@@ -380,7 +430,12 @@ const App: React.FC = () => {
         <ArticleView 
             post={selectedPost} 
             user={user} 
-            onBack={() => setCurrentView('home')} 
+            onBack={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('post');
+                window.history.pushState({}, '', url);
+                setCurrentView('home');
+            }} 
             onUnlock={() => {
                 setPendingPaymentItem(selectedPost);
                 setShowPaymentModal(true);

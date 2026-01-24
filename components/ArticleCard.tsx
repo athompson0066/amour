@@ -1,5 +1,6 @@
-import React from 'react';
-import { Clock, Lock, BookOpen, Mic } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { Clock, Lock, BookOpen, Mic, Link as LinkIcon, Check } from 'lucide-react';
 import { Post } from '../types';
 
 interface ArticleCardProps {
@@ -8,6 +9,16 @@ interface ArticleCardProps {
 }
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}${window.location.pathname}?post=${post.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const getTypeIcon = () => {
     switch (post.type) {
       case 'course': return <BookOpen size={14} className="mr-1" />;
@@ -40,6 +51,13 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
         
         {/* Floating Badges */}
         <div className="absolute top-4 right-4 z-20 flex space-x-2">
+            <button 
+                onClick={handleCopyLink}
+                className="glass-dark text-white p-2 rounded-full hover:bg-slate-900/80 transition-all border border-white/10"
+                title="Copy Link"
+            >
+                {copied ? <Check size={12} className="text-emerald-400" /> : <LinkIcon size={12} />}
+            </button>
             {post.isPremium && (
             <div className="glass-dark text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg backdrop-blur-md border border-white/10">
                 <Lock size={10} className="mr-1 text-yellow-400" /> 

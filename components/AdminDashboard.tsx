@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Post, ContentType, Agent } from '../types';
 import { isSupabaseConfigured } from '../config';
-import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check, Mic2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check, Mic2, Link } from 'lucide-react';
 import { FadeIn } from './Animated';
 
 interface AdminDashboardProps {
@@ -47,6 +47,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'content' | 'experts'>('content');
   const [expertSubTab, setExpertSubTab] = useState<'relationship' | 'astro'>('relationship');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   useEffect(() => {
     setIsConnected(isSupabaseConfigured());
@@ -67,6 +68,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       navigator.clipboard.writeText(code);
       setCopiedId(agent.id);
       setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const copyDirectLink = (id: string, type: 'post' | 'agent') => {
+      const baseUrl = `${window.location.origin}${window.location.pathname}`;
+      const url = `${baseUrl}?${type}=${id}`;
+      navigator.clipboard.writeText(url);
+      setCopiedLink(id);
+      setTimeout(() => setCopiedLink(null), 2000);
   };
 
   const filteredPosts = posts.filter(post => {
@@ -274,6 +283,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => copyDirectLink(post.id, 'post')} 
+                                                    className={`p-2 rounded-full transition-all ${copiedLink === post.id ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`} 
+                                                    title="Copy Store Link"
+                                                >
+                                                    {copiedLink === post.id ? <Check size={18} /> : <Link size={18} />}
+                                                </button>
                                                 <button onClick={() => onView(post)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full" title="View"><Eye size={18} /></button>
                                                 <button onClick={() => onEdit(post)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full" title="Edit"><Edit size={18} /></button>
                                                 <button onClick={() => setDeleteConfirm(post.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full" title="Delete"><Trash2 size={18} /></button>
@@ -328,6 +344,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => copyDirectLink(agent.id, 'agent')} 
+                                                    className={`p-2 rounded-full transition-all ${copiedLink === agent.id ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`} 
+                                                    title="Copy Store Link"
+                                                >
+                                                    {copiedLink === agent.id ? <Check size={18} /> : <Link size={18} />}
+                                                </button>
                                                 <button 
                                                     onClick={() => copyShortcode(agent)} 
                                                     className={`p-2 rounded-full transition-all ${copiedId === agent.id ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`} 

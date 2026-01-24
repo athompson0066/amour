@@ -214,8 +214,6 @@ const AudioBlockPlayer: React.FC<{ block: ContentBlock }> = ({ block }) => {
     );
 };
 
-// ... Rest of the file unchanged ...
-
 // Interactive Quiz Component
 const QuizRunner: React.FC<{ questions: QuizQuestion[], onPass: () => void }> = ({ questions, onPass }) => {
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -529,6 +527,14 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
   const [quizPassedInSection, setQuizPassedInSection] = useState<Record<number, boolean>>({});
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+      const url = `${window.location.origin}${window.location.pathname}?post=${post.id}`;
+      navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   // Group blocks for courses logic
   const courseSections = useMemo(() => {
@@ -815,14 +821,20 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                  <p className="text-sm font-bold text-slate-800">{post.author.name}</p>
              </div>
           </div>
-          <button onClick={handleShare} className="group flex items-center space-x-3 bg-slate-50 text-slate-600 px-8 py-4 rounded-full font-bold hover:bg-rose-600 hover:text-white transition-all shadow-sm hover:shadow-rose-900/20">
-            <Share2 size={18} />
-            <span>Spread the Knowledge</span>
-          </button>
+          <div className="flex space-x-3">
+             <button onClick={handleCopyLink} className="group flex items-center space-x-3 bg-slate-50 text-slate-600 px-8 py-4 rounded-full font-bold hover:bg-slate-900 hover:text-white transition-all shadow-sm">
+                {copiedLink ? <Check size={18} /> : <Link size={18} />}
+                <span>{copiedLink ? 'Link Copied!' : 'Copy Direct Link'}</span>
+             </button>
+             <button onClick={handleShare} className="group flex items-center space-x-3 bg-slate-50 text-slate-600 px-8 py-4 rounded-full font-bold hover:bg-rose-600 hover:text-white transition-all shadow-sm hover:shadow-rose-900/20">
+                <Share2 size={18} />
+                <span>Social Share</span>
+             </button>
+          </div>
         </div>
       </article>
 
-      {/* Video Modal Overlay ... */}
+      {/* Video Modal Overlay */}
       <AnimatePresence>
         {selectedVideo && (
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-10" onClick={() => setSelectedVideo(null)}>
