@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle, ShieldCheck, AlertCircle, Loader2, Lock, Sparkles, CreditCard, ExternalLink } from 'lucide-react';
@@ -45,15 +46,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
       setError("Failed to open Payhip checkout. Please check your browser's popup blocker.");
       setLoading(false);
     }
-  };
-
-  const handleSimulateSuccess = () => {
-    setLoading(true);
-    setError(null);
-    setTimeout(() => {
-      setStep('success');
-      setTimeout(() => onSuccess(), 1500);
-    }, 800);
   };
 
   return (
@@ -113,19 +105,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
                   Payhip link not found. Contact administrator.
                 </div>
               )}
-
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold text-slate-400"><span className="bg-white px-2">Testing</span></div>
-              </div>
-
-              <button 
-                onClick={handleSimulateSuccess}
-                className="w-full flex items-center justify-center py-3 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 hover:text-rose-600 transition-all text-xs font-bold"
-              >
-                <Sparkles size={14} className="mr-2" />
-                Simulate Unlock (Dev Mode)
-              </button>
             </div>
             
             <div className="mt-6 flex flex-col items-center space-y-2">
