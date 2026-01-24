@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle, ShieldCheck, AlertCircle, Loader2, Lock, Sparkles, CreditCard, ExternalLink } from 'lucide-react';
 import { Post, User, Agent } from '../types';
-import { openPayhipCheckout } from '../services/payhipService';
-import { isPayhipConfigured } from '../config';
+import { loadPayhipSDK } from '../services/payhipService';
 
 interface PaymentModalProps {
   item: Post | Agent;
@@ -15,38 +14,21 @@ interface PaymentModalProps {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSuccess }) => {
   const [step, setStep] = useState<'review' | 'success'>('review');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [sdkReady, setSdkReady] = useState(false);
 
   const isPost = 'type' in item;
   const itemTitle = isPost ? (item as Post).title : (item as Agent).name;
   const itemPrice = isPost ? ((item as Post).price || 9.99) : ((item as Agent).priceValue || 2.99);
   const itemTypeLabel = isPost ? (item as Post).type : 'Consultation';
   const itemImage = isPost ? (item as Post).coverImage : (item as Agent).avatar;
-  // Support payhipUrl for both types now
   const payhipUrl = item.payhipProductUrl;
 
-  const handlePayhipCheckout = async () => {
-    if (!payhipUrl) {
-      setError("Payhip product link is not configured for this item.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await openPayhipCheckout(payhipUrl);
-      // Note: Payhip handles the actual payment window. 
-      // In a real production app, you would use a Webhook to confirm payment.
-      // For this UI flow, we provide a button to manually confirm after the popup closes.
-      setLoading(false);
-    } catch (err: any) {
-      console.error("Payhip Checkout Error:", err);
-      setError("Failed to open Payhip checkout. Please check your browser's popup blocker.");
-      setLoading(false);
-    }
-  };
+  // Preload Payhip SDK as soon as modal mounts
+  useEffect(() => {
+    loadPayhipSDK()
+      .then(() => setSdkReady(true))
+      .catch(err => console.warn("Payhip SDK failed to load, falling back to direct link mode.", err));
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -83,28 +65,34 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ item, user, onClose, onSucc
               </div>
             </div>
 
-            {error && (
-              <div className="mb-4 p-3 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-100 flex items-start">
-                <AlertCircle size={14} className="mr-2 mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
             <div className="space-y-3">
               {payhipUrl ? (
-                <button 
-                  onClick={handlePayhipCheckout}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center py-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg font-bold text-sm disabled:opacity-50"
+                /* 
+                   We use a real <a> tag here with 'payhip-buy-button' class.
+                   The Payhip SDK will automatically detect this and open the overlay.
+                   By using a real link, we bypass most popup blocker restrictions.
+                */
+                <a 
+                  href={payhipUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="payhip-buy-button w-full flex items-center justify-center py-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg font-bold text-sm"
                 >
-                  {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : <ExternalLink className="mr-2" size={18} />}
+                  <ExternalLink className="mr-2" size={18} />
                   Buy Now via Payhip
-                </button>
+                </a>
               ) : (
                 <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-xs italic text-center">
                   Payhip link not found. Contact administrator.
                 </div>
               )}
+              
+              <button 
+                onClick={onSuccess}
+                className="w-full flex items-center justify-center py-3 bg-white text-slate-400 hover:text-slate-600 transition-colors font-medium text-xs border border-dashed border-slate-200 rounded-xl"
+              >
+                Already purchased? Refresh access
+              </button>
             </div>
             
             <div className="mt-6 flex flex-col items-center space-y-2">
