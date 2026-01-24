@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CircleDollarSign, BarChart4, TrendingUp, Terminal, ArrowLeft, Loader2, Sparkles, CheckCircle2, ShieldAlert, Cpu, Globe, Search, RefreshCw, Save } from 'lucide-react';
@@ -37,8 +38,9 @@ const AdminPriceStrategy: React.FC<AdminPriceStrategyProps> = ({ onBack, onRefre
     // Filter monetized items and ensure they have valid IDs
     const monetized = [...posts, ...agents, ...astro].filter(item => {
         if (!item.id) return false;
-        if ('isPremium' in item) return item.isPremium;
-        return (item as Agent).priceValue && (item as Agent).priceValue > 0;
+        // Fix for type narrowing: Use 'type' property unique to Post to prevent non-overlapping cast errors
+        if ('type' in item) return item.isPremium;
+        return (item as unknown as Agent).priceValue && (item as unknown as Agent).priceValue > 0;
     });
     setItems(monetized);
   };
@@ -103,6 +105,7 @@ const AdminPriceStrategy: React.FC<AdminPriceStrategyProps> = ({ onBack, onRefre
 
             const newPrice = safeParsePrice(proposal.proposedPrice);
 
+            // Fix for type narrowing: Use 'type' property to distinguish between Post and Agent
             if ('type' in item) { 
                 // It's a Post
                 const updatedPost = { ...item as Post, price: newPrice };
@@ -246,7 +249,8 @@ const AdminPriceStrategy: React.FC<AdminPriceStrategyProps> = ({ onBack, onRefre
                                 <tbody className="divide-y divide-slate-50">
                                     {proposals.map(proposal => {
                                         const item = items.find(i => i.id === proposal.id);
-                                        const currentPriceValue = item ? ('price' in item ? (item as Post).price : (item as Agent).priceValue) : 0;
+                                        // Fix for Error 153: Correctly identify Agent vs Post using 'priceValue' or 'type' check before casting
+                                        const currentPriceValue = item ? ('priceValue' in item ? (item as unknown as Agent).priceValue : (item as Post).price) : 0;
                                         
                                         // Use safe numeric conversion to ensure .toFixed() never fails with NaN
                                         const currentPrice = safeParsePrice(currentPriceValue);

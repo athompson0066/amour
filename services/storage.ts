@@ -96,26 +96,40 @@ const mapRowToPost = (row: any): Post => ({
   readTime: row.read_time || '5 min read', 
   isPremium: row.is_premium,
   price: row.price,
+  // If row has null or undefined for the column, it won't overwrite existing local data
+  payhipProductUrl: row.payhip_product_url || undefined, 
   tags: row.tags || [],
   blocks: row.blocks || [],
   relatedVideos: row.related_videos || []
 });
 
-const mapPostToRow = (post: Post, includeVideos: boolean = true) => ({
-  id: post.id || `post_${Date.now()}`,
-  title: post.title,
-  subtitle: post.subtitle,
-  type: post.type,
-  cover_image: post.coverImage,
-  author: post.author || DEFAULT_AUTHOR,
-  published_at: post.publishedAt || new Date().toISOString(),
-  read_time: post.readTime || '5 min read',
-  is_premium: !!post.isPremium,
-  price: post.price || 0,
-  tags: post.tags || [],
-  blocks: post.blocks || [],
-  related_videos: includeVideos ? (post.relatedVideos || []) : []
-});
+const mapPostToRow = (post: Post, excludeFields: string[] = []) => {
+  const row: any = {
+    id: post.id || `post_${Date.now()}`,
+    title: post.title,
+    subtitle: post.subtitle,
+    type: post.type,
+    cover_image: post.coverImage,
+    author: post.author || DEFAULT_AUTHOR,
+    published_at: post.publishedAt || new Date().toISOString(),
+    read_time: post.readTime || '5 min read',
+    is_premium: !!post.isPremium,
+    price: post.price || 0,
+    tags: post.tags || [],
+    blocks: post.blocks || []
+  };
+
+  // Surgeonically include or exclude based on the exclude list
+  if (!excludeFields.includes('payhip_product_url')) {
+    row.payhip_product_url = post.payhipProductUrl || null;
+  }
+  
+  if (!excludeFields.includes('related_videos')) {
+    row.related_videos = post.relatedVideos || [];
+  }
+
+  return row;
+};
 
 export const getPosts = async (): Promise<Post[]> => {
   const supabase = getSupabase();
@@ -135,11 +149,29 @@ export const getPosts = async (): Promise<Post[]> => {
   const stored = localStorage.getItem(STORAGE_KEY);
   const localPosts: Post[] = stored ? JSON.parse(stored) : SEED_DATA;
   
-  if (supabasePosts.length > 0) return supabasePosts;
+  // Merge logic: Supabase is preferred, but local persistence is fallback
+  if (supabasePosts.length > 0) {
+      // If we have Supabase data, we still check if any local posts have newer/more data (like Payhip links)
+      // that might be missing in the remote DB schema
+      const merged = supabasePosts.map(sPost => {
+          const localMatch = localPosts.find(l => l.id === sPost.id);
+          if (localMatch) {
+              return {
+                  ...localMatch, // Local storage is often more complete if schema sync issues exist
+                  ...sPost,      // But Supabase provides the authoritative titles/content
+                  payhipProductUrl: sPost.payhipProductUrl || localMatch.payhipProductUrl
+              };
+          }
+          return sPost;
+      });
+      return merged;
+  }
+  
   return localPosts;
 };
 
 export const savePost = async (post: Post): Promise<void> => {
+  // 1. Save to Local Storage FIRST (Source of Truth for the user)
   let currentLocalPosts: Post[] = [];
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -156,18 +188,30 @@ export const savePost = async (post: Post): Promise<void> => {
       console.error("Local Storage Save Failed:", e);
   }
 
+  // 2. Sync with Supabase (Background / Remote Persistance)
   const supabase = getSupabase();
   if (supabase) {
     try {
-      const row = mapPostToRow(post, true);
+      const row = mapPostToRow(post);
       const { error } = await supabase.from('posts').upsert(row);
       if (error) throw error;
       console.log("Supabase sync successful.");
     } catch (e: any) {
-      console.error("Supabase sync failed:", e.message || e);
-      if (e.message?.includes('related_videos')) {
-          const fallbackRow = mapPostToRow(post, false);
-          await supabase.from('posts').upsert(fallbackRow);
+      console.warn("Supabase initial sync failed, attempting graceful fallback...", e.message || e);
+      
+      // If the error suggests missing columns, try saving without the problematic metadata
+      const excludeList = [];
+      if (e.message?.toLowerCase().includes('payhip_product_url')) excludeList.push('payhip_product_url');
+      if (e.message?.toLowerCase().includes('related_videos')) excludeList.push('related_videos');
+      
+      if (excludeList.length > 0) {
+          try {
+              const fallbackRow = mapPostToRow(post, excludeList);
+              await supabase.from('posts').upsert(fallbackRow);
+              console.log(`Sync successful after excluding: ${excludeList.join(', ')}`);
+          } catch (retryErr) {
+              console.error("Critical: All Supabase sync attempts failed.", retryErr);
+          }
       }
     }
   }
@@ -237,8 +281,7 @@ export const getAstroAgents = (): Agent[] => {
     
     return combined
         .map(a => ({ ...a, category: a.category || 'astro' }))
-        // Fix: Use 'agent.id' instead of undefined 'a.id' in the filter predicate.
-        .filter(agent => !excluded.includes(agent.id) && (agent.category === 'astro' || agent.id.length < 15)); // Heuristic for base astro IDs
+        .filter(agent => !excluded.includes(agent.id) && (agent.category === 'astro' || agent.id.length < 15)); 
 };
 
 export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promise<void> => {
