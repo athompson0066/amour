@@ -48,36 +48,6 @@ const SEED_DATA: Post[] = [
     blocks: [
       { id: 'a1', type: 'text', content: 'Intimacy is more than just proximity; it is the art of being seen and known in your most vulnerable state.' }
     ]
-  },
-  {
-    id: 'podcast-1',
-    title: 'Midnight Musings: Healing After Loss',
-    subtitle: 'A raw and unfiltered conversation on navigating the void and reclaiming your identity.',
-    type: 'podcast',
-    coverImage: 'https://images.unsplash.com/photo-1478737270239-2fccd2c78621?auto=format&fit=crop&q=80&w=800&h=400',
-    author: { ...DEFAULT_AUTHOR, name: 'Amour Audio' },
-    publishedAt: new Date(Date.now() - 172800000).toISOString(),
-    readTime: '45 min listen',
-    isPremium: true,
-    price: 9.99,
-    payhipProductUrl: 'https://payhip.com/b/example-pod',
-    unlockPassword: 'MIDNIGHT-MEND',
-    tags: ['Audio', 'Healing', 'Breakups'],
-    blocks: []
-  },
-  {
-    id: 'app-1',
-    title: 'The Heart Mend Journey Tracker',
-    subtitle: 'Visualize your healing, track your mood, and reclaim your peace after a breakup.',
-    type: 'app',
-    coverImage: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=800&h=400',
-    author: { ...DEFAULT_AUTHOR, name: 'Amour Tools' },
-    publishedAt: new Date(Date.now() - 259200000).toISOString(),
-    readTime: 'Interactive Tool',
-    isPremium: true,
-    price: 14.99,
-    tags: ['Healing', 'Wellness', 'Tracker'],
-    blocks: []
   }
 ];
 
@@ -105,35 +75,10 @@ const BASE_AGENTS: Agent[] = [
     priceValue: 3.50,
     isOnline: true,
     expertise: ['NVC', 'Intimacy Recovery', 'Active Listening']
-  },
-  {
-    id: 'agent-3',
-    name: 'Sienna Vance',
-    role: 'Modern Dating Coach',
-    category: 'relationship',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200&h=200',
-    description: 'Helping singles navigate the digital landscape and build authentic self-confidence.',
-    price: '$1.99/min',
-    priceValue: 1.99,
-    isOnline: false,
-    expertise: ['App Strategy', 'Self-Worth', 'First Date Success']
   }
 ];
 
-const BASE_ASTRO_AGENTS: Agent[] = [
-  { id: 'aries', name: 'Aria', role: 'Aries Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&q=80&w=200&h=200', description: 'Harness the fiery energy of the ram for decisive life changes.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Passion', 'Leadership', 'Initiative'] },
-  { id: 'taurus', name: 'Terra', role: 'Taurus Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200&h=200', description: 'Finding stability and sensual fulfillment in your earthy connections.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Loyalty', 'Stability', 'Sensuality'] },
-  { id: 'gemini', name: 'Gemi', role: 'Gemini Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200', description: 'Bridging the gap between two minds through cosmic communication.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Intellect', 'Dialogue', 'Variety'] },
-  { id: 'cancer', name: 'Luna', role: 'Cancer Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200', description: 'Navigating the deep lunar tides of emotional security and home.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Nurturing', 'Security', 'Intuition'] },
-  { id: 'leo', name: 'Solara', role: 'Leo Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200&h=200', description: 'Radiating self-love and heart-centered creative expression.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Confidence', 'Generosity', 'Drama'] },
-  { id: 'virgo', name: 'Vesta', role: 'Virgo Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=200&h=200', description: 'Applying analytical wisdom to perfect your relationship dynamics.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Analysis', 'Purity', 'Service'] },
-  { id: 'libra', name: 'Lia', role: 'Libra Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200&h=200', description: 'Restoring harmony and aesthetic balance to your partnerships.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Harmony', 'Justice', 'Romance'] },
-  { id: 'scorpio', name: 'Nova', role: 'Scorpio Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200&h=200', description: 'Diving into the transformative depths of soul-level intimacy.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Depth', 'Transformation', 'Power'] },
-  { id: 'sagittarius', name: 'Sage', role: 'Sagittarius Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200', description: 'Expanding horizons through the search for philosophical truth.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Freedom', 'Optimism', 'Truth'] },
-  { id: 'capricorn', name: 'Cora', role: 'Capricorn Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&q=80&w=200&h=200', description: 'Building long-term legacy and structural integrity in love.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Ambition', 'Structure', 'Patience'] },
-  { id: 'aquarius', name: 'Aqua', role: 'Aquarius Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&q=80&w=200&h=200', description: 'Pioneering unique, unconventional paths to collective connection.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Innovation', 'Community', 'Detachment'] },
-  { id: 'pisces', name: 'Pia', role: 'Pisces Specialist', category: 'astro', avatar: 'https://images.unsplash.com/photo-1544717297-fa95b3ee51f3?auto=format&fit=crop&q=80&w=200&h=200', description: 'Melting boundaries through spiritual compassion and dreams.', price: '$2.50/min', priceValue: 2.50, isOnline: true, expertise: ['Mysticism', 'Dreams', 'Healing'] }
-];
+// --- MAPPING UTILS ---
 
 const mapRowToPost = (row: any): Post => ({
   id: row.id,
@@ -153,36 +98,67 @@ const mapRowToPost = (row: any): Post => ({
   relatedVideos: row.related_videos || []
 });
 
-const mapPostToRow = (post: Post, excludeFields: string[] = []) => {
-  const row: any = {
-    id: post.id || `post_${Date.now()}`,
+const mapPostToRow = (post: Post) => {
+  return {
+    id: post.id,
     title: post.title,
     subtitle: post.subtitle,
     type: post.type,
     cover_image: post.coverImage,
-    author: post.author || DEFAULT_AUTHOR,
-    published_at: post.publishedAt || new Date().toISOString(),
-    read_time: post.readTime || '5 min read',
+    author: post.author,
+    published_at: post.publishedAt,
+    read_time: post.readTime,
     is_premium: !!post.isPremium,
     price: post.price || 0,
+    payhip_product_url: post.payhipProductUrl || null,
+    unlock_password: post.unlockPassword || null,
     tags: post.tags || [],
-    blocks: post.blocks || []
+    blocks: post.blocks || [],
+    related_videos: post.relatedVideos || []
   };
-
-  if (!excludeFields.includes('payhip_product_url')) {
-    row.payhip_product_url = post.payhipProductUrl || null;
-  }
-  
-  if (!excludeFields.includes('unlock_password')) {
-    row.unlock_password = post.unlockPassword || null;
-  }
-
-  if (!excludeFields.includes('related_videos')) {
-    row.related_videos = post.relatedVideos || [];
-  }
-
-  return row;
 };
+
+const mapRowToAgent = (row: any): Agent => ({
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    category: row.category || 'relationship',
+    avatar: row.avatar,
+    description: row.description,
+    systemInstruction: row.system_instruction,
+    embedCode: row.embed_code,
+    price: row.price,
+    priceValue: row.price_value,
+    payhipProductUrl: row.payhip_product_url,
+    unlockPassword: row.unlock_password,
+    isOnline: row.is_online ?? true,
+    expertise: row.expertise || [],
+    tools: row.tools || {},
+    thinkingBudget: row.thinking_budget || 0
+});
+
+const mapAgentToRow = (agent: Agent) => {
+    return {
+        id: agent.id,
+        name: agent.name,
+        role: agent.role,
+        category: agent.category,
+        avatar: agent.avatar,
+        description: agent.description,
+        system_instruction: agent.systemInstruction || null,
+        embed_code: agent.embedCode || null,
+        price: agent.price,
+        price_value: agent.priceValue || 0,
+        payhip_product_url: agent.payhipProductUrl || null,
+        unlock_password: agent.unlockPassword || null,
+        is_online: !!agent.isOnline,
+        expertise: agent.expertise || [],
+        tools: agent.tools || {},
+        thinking_budget: agent.thinkingBudget || 0
+    };
+};
+
+// --- POSTS SERVICE ---
 
 export const getPosts = async (): Promise<Post[]> => {
   const supabase = getSupabase();
@@ -202,17 +178,12 @@ export const getPosts = async (): Promise<Post[]> => {
   const stored = localStorage.getItem(STORAGE_KEY);
   const localPosts: Post[] = stored ? JSON.parse(stored) : SEED_DATA;
   
+  // Merge: Cloud data wins for existing IDs, but keep local-only new posts
   const combined = [...localPosts];
-  
   supabasePosts.forEach(sPost => {
       const localIndex = combined.findIndex(l => l.id === sPost.id);
       if (localIndex >= 0) {
-          combined[localIndex] = {
-              ...combined[localIndex],
-              ...sPost,
-              payhipProductUrl: sPost.payhipProductUrl || combined[localIndex].payhipProductUrl,
-              unlockPassword: sPost.unlockPassword || combined[localIndex].unlockPassword
-          };
+          combined[localIndex] = sPost;
       } else {
           combined.push(sPost);
       }
@@ -222,41 +193,37 @@ export const getPosts = async (): Promise<Post[]> => {
 };
 
 export const savePost = async (post: Post): Promise<void> => {
+  // 1. Save Locally for instant feedback
   let currentLocalPosts: Post[] = [];
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
       currentLocalPosts = stored ? JSON.parse(stored) : SEED_DATA;
-      
       const existingIndex = currentLocalPosts.findIndex(p => p.id === post.id);
-      if (existingIndex >= 0) {
-        currentLocalPosts[existingIndex] = post;
-      } else {
-        currentLocalPosts.unshift(post);
-      }
+      if (existingIndex >= 0) currentLocalPosts[existingIndex] = post;
+      else currentLocalPosts.unshift(post);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentLocalPosts));
-  } catch (e) {
-      console.error("Local Storage Save Failed:", e);
-  }
+  } catch (e) {}
 
+  // 2. Sync to Cloud
   const supabase = getSupabase();
   if (supabase) {
     try {
       const row = mapPostToRow(post);
       const { error } = await supabase.from('posts').upsert(row);
-      if (error) throw error;
-      console.log("Supabase sync successful.");
+      if (error) {
+          console.error("Supabase Post Upsert Error:", error.message, error.details);
+          throw error;
+      }
+      console.log("Supabase sync successful for post:", post.id);
     } catch (e: any) {
-      console.warn("Supabase sync failed, attempting fallback...", e.message || e);
-      const excludeList = [];
-      if (e.message?.toLowerCase().includes('payhip_product_url')) excludeList.push('payhip_product_url');
-      if (e.message?.toLowerCase().includes('unlock_password')) excludeList.push('unlock_password');
-      if (e.message?.toLowerCase().includes('related_videos')) excludeList.push('related_videos');
-      
-      if (excludeList.length > 0) {
-          try {
-              const fallbackRow = mapPostToRow(post, excludeList);
-              await supabase.from('posts').upsert(fallbackRow);
-          } catch (retryErr) {}
+      console.error("Supabase sync failed critically:", e.message || e);
+      // Attempt fallback if specific columns are missing (legacy support)
+      if (e.message?.includes('column')) {
+          console.warn("Attempting partial sync without newer columns...");
+          const partialRow: any = mapPostToRow(post);
+          delete partialRow.payhip_product_url;
+          delete partialRow.unlock_password;
+          await supabase.from('posts').upsert(partialRow).catch(() => {});
       }
     }
   }
@@ -265,9 +232,7 @@ export const savePost = async (post: Post): Promise<void> => {
 export const deletePost = async (id: string): Promise<void> => {
   const supabase = getSupabase();
   if (supabase) {
-    try {
-        await supabase.from('posts').delete().eq('id', id);
-    } catch (e) {}
+    try { await supabase.from('posts').delete().eq('id', id); } catch (e) {}
   }
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
@@ -277,85 +242,116 @@ export const deletePost = async (id: string): Promise<void> => {
   }
 };
 
-const getAgentOverrides = (): Record<string, Partial<Agent>> => {
-    try {
-        const stored = localStorage.getItem(AGENT_OVERRIDES_KEY);
-        return stored ? JSON.parse(stored) : {};
-    } catch (e) { return {}; }
+// --- AGENTS SERVICE ---
+
+export const getAgentsData = async (): Promise<Agent[]> => {
+    const supabase = getSupabase();
+    let supabaseAgents: Agent[] = [];
+    
+    if (supabase) {
+        try {
+            const { data, error } = await supabase.from('agents').select('*');
+            if (!error && data) {
+                supabaseAgents = data.map(mapRowToAgent);
+            }
+        } catch (e) {
+            console.warn("Supabase Agent fetch failed.");
+        }
+    }
+
+    const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
+    const overrides = JSON.parse(localStorage.getItem(AGENT_OVERRIDES_KEY) || '{}');
+    const excluded = JSON.parse(localStorage.getItem(AGENT_EXCLUSIONS_KEY) || '[]');
+    
+    // Combine base agents with overrides
+    const baseWithOverrides = BASE_AGENTS.map(agent => ({ 
+        ...agent, 
+        ...(overrides[agent.id] || {}) 
+    }));
+
+    const combined = [...baseWithOverrides, ...custom];
+    
+    // Merge cloud agents
+    supabaseAgents.forEach(sAgent => {
+        const idx = combined.findIndex(c => c.id === sAgent.id);
+        if (idx >= 0) combined[idx] = sAgent;
+        else combined.push(sAgent);
+    });
+
+    return combined.filter(a => !excluded.includes(a.id));
 };
 
-const getCustomAgents = (): Agent[] => {
-    try {
-        const stored = localStorage.getItem(AGENT_CUSTOM_KEY);
-        return stored ? JSON.parse(stored) : [];
-    } catch (e) { return []; }
+// Legacy getters kept for compatibility, but now async ready in App.tsx
+export const getAgents = () => {
+    // This is now handled in App.tsx refreshData
+    const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
+    const overrides = JSON.parse(localStorage.getItem(AGENT_OVERRIDES_KEY) || '{}');
+    const excluded = JSON.parse(localStorage.getItem(AGENT_EXCLUSIONS_KEY) || '[]');
+    return [...BASE_AGENTS.map(a => ({...a, ...(overrides[a.id] || {})})), ...custom]
+        .filter(a => !excluded.includes(a.id) && (a.category === 'relationship' || !a.category));
 };
 
-const getAgentExclusions = (): string[] => {
-    try {
-        const stored = localStorage.getItem(AGENT_EXCLUSIONS_KEY);
-        return stored ? JSON.parse(stored) : [];
-    } catch (e) { return []; }
-};
-
-export const getAgents = (): Agent[] => {
-    const overrides = getAgentOverrides();
-    const custom = getCustomAgents();
-    const excluded = getAgentExclusions();
-    
-    const combined = [
-        ...BASE_AGENTS.map(agent => ({ ...agent, ...(overrides[agent.id] || {}) })),
-        ...custom
-    ];
-    
-    return combined
-        .map(a => ({ ...a, category: a.category || 'relationship' }))
-        .filter(agent => !excluded.includes(agent.id) && agent.category === 'relationship');
-};
-
-export const getAstroAgents = (): Agent[] => {
-    const overrides = getAgentOverrides();
-    const custom = getCustomAgents();
-    const excluded = getAgentExclusions();
-    
-    const combined = [
-        ...BASE_ASTRO_AGENTS.map(agent => ({ ...agent, ...(overrides[agent.id] || {}) })),
-        ...custom
-    ];
-    
-    return combined
-        .map(a => ({ ...a, category: a.category || 'astro' }))
-        .filter(agent => !excluded.includes(agent.id) && (agent.category === 'astro' || agent.id.length < 15)); 
+export const getAstroAgents = () => {
+    // Usually these are base agents, but we filter them out for directory views
+    const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
+    return custom.filter((a: any) => a.category === 'astro');
 };
 
 export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promise<void> => {
-    const custom = getCustomAgents();
-    const customIndex = custom.findIndex(a => a.id === agentId);
+    const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
+    const customIndex = custom.findIndex((a: any) => a.id === agentId);
     
+    let fullAgent: Agent;
     if (customIndex >= 0) {
         custom[customIndex] = { ...custom[customIndex], ...updates };
+        fullAgent = custom[customIndex];
         localStorage.setItem(AGENT_CUSTOM_KEY, JSON.stringify(custom));
     } else {
-        const overrides = getAgentOverrides();
+        const overrides = JSON.parse(localStorage.getItem(AGENT_OVERRIDES_KEY) || '{}');
         overrides[agentId] = { ...(overrides[agentId] || {}), ...updates };
         localStorage.setItem(AGENT_OVERRIDES_KEY, JSON.stringify(overrides));
+        const base = BASE_AGENTS.find(a => a.id === agentId);
+        fullAgent = { ...base!, ...overrides[agentId] };
+    }
+
+    // Sync Expert to Supabase
+    const supabase = getSupabase();
+    if (supabase) {
+        try {
+            const row = mapAgentToRow(fullAgent);
+            const { error } = await supabase.from('agents').upsert(row);
+            if (error) console.error("Supabase Agent Sync Error:", error.message);
+        } catch (e) {}
     }
 };
 
 export const addCustomAgent = async (agent: Agent): Promise<void> => {
-    const custom = getCustomAgents();
+    const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
     custom.push(agent);
     localStorage.setItem(AGENT_CUSTOM_KEY, JSON.stringify(custom));
+
+    const supabase = getSupabase();
+    if (supabase) {
+        try {
+            const row = mapAgentToRow(agent);
+            await supabase.from('agents').upsert(row);
+        } catch (e) {}
+    }
 };
 
 export const deleteAgent = async (id: string): Promise<void> => {
-    const custom = getCustomAgents();
-    const newCustom = custom.filter(a => a.id !== id);
+    const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
+    const newCustom = custom.filter((a: any) => a.id !== id);
     localStorage.setItem(AGENT_CUSTOM_KEY, JSON.stringify(newCustom));
     
-    const excluded = getAgentExclusions();
+    const excluded = JSON.parse(localStorage.getItem(AGENT_EXCLUSIONS_KEY) || '[]');
     if (!excluded.includes(id)) {
         excluded.push(id);
         localStorage.setItem(AGENT_EXCLUSIONS_KEY, JSON.stringify(excluded));
+    }
+
+    const supabase = getSupabase();
+    if (supabase) {
+        try { await supabase.from('agents').delete().eq('id', id); } catch (e) {}
     }
 };

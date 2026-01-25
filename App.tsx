@@ -22,7 +22,7 @@ import SoulmateSketch from './components/SoulmateSketch';
 import Hero from './components/Hero';
 import { FadeIn, StaggerGrid, StaggerItem } from './components/Animated';
 import { Post, ContentType, Agent, User } from './types';
-import { getPosts, getAgents, getAstroAgents, deletePost as storageDeletePost, deleteAgent as storageDeleteAgent } from './services/storage';
+import { getPosts, getAgentsData, deletePost as storageDeletePost, deleteAgent as storageDeleteAgent } from './services/storage';
 import { getCurrentUser, updateUser, isAdminAuthenticated, logoutAdmin } from './services/authService';
 import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -44,11 +44,27 @@ const App: React.FC = () => {
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isExternalEmbed, setIsExternalEmbed] = useState(false);
   
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  
   const [user, setUser] = useState<User | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const refreshData = async () => {
+    setIsLoadingPosts(true);
+    try {
+        const [postData, allAgentData] = await Promise.all([
+            getPosts(),
+            getAgentsData()
+        ]);
+        
+        setPosts(postData);
+        setAgents(allAgentData.filter(a => a.category === 'relationship' || !a.category));
+        setAstroAgents(allAgentData.filter(a => a.category === 'astro'));
+    } catch (e) {
+        console.error("Refresh Data failed:", e);
+    } finally {
+        setIsLoadingPosts(false);
+    }
+  };
 
   useEffect(() => {
     refreshData().then(() => {
@@ -58,14 +74,15 @@ const App: React.FC = () => {
         const embedId = params.get('embed');
         
         if (embedId) {
-            const allAgents = [...getAgents(), ...getAstroAgents()];
-            const target = allAgents.find(a => a.id === embedId || a.embedCode === embedId);
-            if (target) {
-                setSelectedAgent(target);
-                setIsExternalEmbed(true);
-                setCurrentView('chat');
-                return;
-            }
+            getAgentsData().then(allAgents => {
+                const target = allAgents.find(a => a.id === embedId || a.embedCode === embedId);
+                if (target) {
+                    setSelectedAgent(target);
+                    setIsExternalEmbed(true);
+                    setCurrentView('chat');
+                }
+            });
+            return;
         }
 
         if (postId) {
@@ -77,20 +94,6 @@ const App: React.FC = () => {
                 }
             });
         }
-
-        if (agentId) {
-            const allAgents = [...getAgents(), ...getAstroAgents()];
-            const target = allAgents.find(a => a.id === agentId);
-            if (target) {
-                if (!user?.purchasedContentIds.includes(target.id) && !user?.isSubscriber) {
-                    setPendingPaymentItem(target);
-                    setShowPaymentModal(true);
-                } else {
-                    setSelectedAgent(target);
-                    setCurrentView('chat');
-                }
-            }
-        }
     });
 
     const initUser = async () => {
@@ -101,21 +104,9 @@ const App: React.FC = () => {
     initUser();
   }, []);
 
-  // Reset pagination when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filterType, searchQuery]);
-
-  const refreshData = async () => {
-    setIsLoadingPosts(true);
-    const postData = await getPosts();
-    const agentData = getAgents();
-    const astroData = getAstroAgents();
-    setPosts(postData);
-    setAgents(agentData);
-    setAstroAgents(astroData);
-    setIsLoadingPosts(false);
-  };
 
   const handleToggleAdmin = () => {
     if (isAdminMode) {
@@ -156,15 +147,12 @@ const App: React.FC = () => {
         setShowPaymentModal(true);
         return;
     }
-
     if (post.id === 'app-1') {
         setCurrentView('app-heart-mend');
         return;
     }
-    
     setSelectedPost(post);
     setCurrentView('article');
-    
     const url = new URL(window.location.href);
     url.searchParams.set('post', post.id);
     window.history.pushState({}, '', url);
@@ -200,10 +188,8 @@ const App: React.FC = () => {
           updateUser(updatedUser);
           setUser(updatedUser);
           setShowPaymentModal(false);
-          
           const item = pendingPaymentItem;
           setPendingPaymentItem(null);
-
           if ('type' in item) { 
               if (item.id === 'app-1') setCurrentView('app-heart-mend');
               else if (item.id === 'soulmate-sketch-id') setCurrentView('soulmate-sketch');
@@ -234,7 +220,6 @@ const App: React.FC = () => {
       return matchesType && matchesSearch;
   });
 
-  // Calculate Paginated Content
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
   const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
@@ -243,8 +228,6 @@ const App: React.FC = () => {
       setCurrentPage(page);
       document.getElementById('directory-content')?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const toolApps = posts.filter(p => p.type === 'app');
 
   const handleSketchClick = () => {
       const sketchItem: Post = {
@@ -261,7 +244,6 @@ const App: React.FC = () => {
           tags: [],
           blocks: []
       };
-      
       if (!checkAccess(sketchItem.id, true)) {
           setPendingPaymentItem(sketchItem);
           setShowPaymentModal(true);
@@ -355,8 +337,6 @@ const App: React.FC = () => {
                                     </StaggerItem>
                                 ))}
                             </StaggerGrid>
-                            
-                            {/* Pagination Controls */}
                             {totalPages > 1 && (
                                 <div className="mt-16 flex flex-col items-center">
                                     <div className="flex items-center space-x-2">
@@ -367,7 +347,6 @@ const App: React.FC = () => {
                                         >
                                             <ChevronLeft size={20} />
                                         </button>
-                                        
                                         <div className="flex items-center px-4 space-x-1">
                                             {[...Array(totalPages)].map((_, i) => {
                                                 const page = i + 1;
@@ -386,7 +365,6 @@ const App: React.FC = () => {
                                                 );
                                             })}
                                         </div>
-
                                         <button 
                                             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                                             disabled={currentPage === totalPages}
@@ -395,29 +373,15 @@ const App: React.FC = () => {
                                             <ChevronRight size={20} />
                                         </button>
                                     </div>
-                                    <p className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                        Page {currentPage} of {totalPages}
-                                    </p>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="py-24 text-center bg-white/50 backdrop-blur-sm rounded-3xl border-2 border-dashed border-slate-200"
-                        >
+                        <div className="py-24 text-center bg-white/50 backdrop-blur-sm rounded-3xl border-2 border-dashed border-slate-200">
                             <Inbox className="mx-auto text-slate-200 mb-4" size={64} />
-                            <h3 className="text-xl font-bold text-slate-800">No content found in this category</h3>
-                            <p className="text-slate-500 mt-2">Try selecting a different tab or checking back later.</p>
-                            <button 
-                                onClick={() => setFilterType('all')}
-                                className="mt-6 text-rose-600 font-bold hover:underline"
-                            >
-                                Clear all filters
-                            </button>
-                        </motion.div>
+                            <h3 className="text-xl font-bold text-slate-800">No content found</h3>
+                            <button onClick={() => setFilterType('all')} className="mt-6 text-rose-600 font-bold hover:underline">Clear all filters</button>
+                        </div>
                     )}
                 </AnimatePresence>
             )}
@@ -430,36 +394,23 @@ const App: React.FC = () => {
              <FadeIn className="text-center mb-16"><h1 className="text-5xl font-serif font-bold">Relationship Toolkit</h1></FadeIn>
              <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <StaggerItem>
-                    <div 
-                        onClick={handleSketchClick}
-                        className="group relative bg-white border border-rose-100 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden h-full flex flex-col"
-                    >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-full -z-0"></div>
+                    <div onClick={handleSketchClick} className="group relative bg-white border border-rose-100 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden h-full flex flex-col">
                         <div className="relative z-10 flex-grow">
                             <Stars className="text-rose-500 mb-4" size={32} />
                             <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Soulmate Sketch</h3>
-                            <p className="text-slate-500 text-sm mb-6">Manifest a hand-drawn psychic portrait of your fated match based on astrological alignment.</p>
+                            <p className="text-slate-500 text-sm mb-6">Manifest a hand-drawn psychic portrait of your fated match.</p>
                         </div>
-                        <div className="mt-auto pt-6 flex justify-between items-center border-t border-slate-50">
-                             <span className="text-rose-600 font-bold">$29.99 One-time</span>
-                             <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-rose-200">
-                                 <Sparkles size={18} />
-                             </div>
-                        </div>
+                        <div className="mt-auto pt-6 flex justify-between items-center border-t border-slate-50"><span className="text-rose-600 font-bold">$29.99 One-time</span><div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-rose-200"><Sparkles size={18} /></div></div>
                     </div>
                 </StaggerItem>
-                {toolApps.map(app => <StaggerItem key={app.id}><ArticleCard post={app} onClick={handlePostClick} /></StaggerItem>)}
+                {posts.filter(p => p.type === 'app').map(app => <StaggerItem key={app.id}><ArticleCard post={app} onClick={handlePostClick} /></StaggerItem>)}
              </StaggerGrid>
          </div>
       )}
 
       {currentView === 'astrology' && (
          <div className="max-w-7xl mx-auto px-4 py-20">
-            <FadeIn className="text-center mb-16">
-              <Stars className="mx-auto text-rose-500 mb-4" size={48} />
-              <h1 className="text-5xl font-serif font-bold mb-4">The Astro-Council</h1>
-              <p className="text-slate-500 max-w-2xl mx-auto text-lg">Specialized AI Experts for every zodiac sign. find your cosmic match instantly.</p>
-            </FadeIn>
+            <FadeIn className="text-center mb-16"><Stars className="mx-auto text-rose-500 mb-4" size={48} /><h1 className="text-5xl font-serif font-bold mb-4">The Astro-Council</h1></FadeIn>
             <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {astroAgents.map(agent => <StaggerItem key={agent.id}><AgentCard agent={agent} onChat={handleAgentChat} onCall={handleAgentCall} /></StaggerItem>)}
             </StaggerGrid>
@@ -481,84 +432,40 @@ const App: React.FC = () => {
       {currentView === 'chat' && selectedAgent && <ChatInterface agent={selectedAgent} onBack={() => setCurrentView('agents')} />}
       {currentView === 'voice' && selectedAgent && <VoiceInterface agent={selectedAgent} onEndCall={() => setCurrentView('agents')} />}
       {currentView === 'article' && selectedPost && (
-        <ArticleView 
-            post={selectedPost} 
-            user={user} 
-            onBack={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.delete('post');
-                window.history.pushState({}, '', url);
-                setCurrentView('home');
-            }} 
-            onUnlock={() => {
-                setPendingPaymentItem(selectedPost);
-                setShowPaymentModal(true);
-            }} 
-            onLoginRequest={() => {}} 
-        />
+        <ArticleView post={selectedPost} user={user} onBack={() => { const url = new URL(window.location.href); url.searchParams.delete('post'); window.history.pushState({}, '', url); setCurrentView('home'); }} onUnlock={() => { setPendingPaymentItem(selectedPost); setShowPaymentModal(true); }} onLoginRequest={() => {}} />
       )}
       {currentView === 'admin-login' && <AdminLogin onSuccess={handleAdminAuthSuccess} onCancel={() => setCurrentView('home')} />}
       {currentView === 'admin-dashboard' && (
         <AdminDashboard 
-          posts={posts}
-          agents={[...agents, ...astroAgents]}
-          isLoading={isLoadingPosts}
-          onRefresh={refreshData}
+          posts={posts} agents={[...agents, ...astroAgents]} isLoading={isLoadingPosts} onRefresh={refreshData}
           onCreate={() => { setSelectedPost(null); setCurrentView('admin-create'); }} 
           onCreateAgent={() => { setSelectedAgent(null); setCurrentView('admin-agent-edit'); }}
           onEdit={(p) => { setSelectedPost(p); setCurrentView('admin-edit'); }} 
           onEditAgent={(a) => { setSelectedAgent(a); setCurrentView('admin-agent-edit'); }}
-          onView={handlePostClick} 
-          onDelete={handleDeletePost}
-          onDeleteAgent={handleDeleteAgent}
-          onGoToWorkspace={() => setCurrentView('admin-agents')}
-          onGoToPricing={() => setCurrentView('admin-pricing')}
-          onGoToAudioStudio={() => setCurrentView('admin-audio-studio')}
-          onSettings={() => setCurrentView('admin-settings')}
+          onView={handlePostClick} onDelete={handleDeletePost} onDeleteAgent={handleDeleteAgent}
+          onGoToWorkspace={() => setCurrentView('admin-agents')} onGoToPricing={() => setCurrentView('admin-pricing')}
+          onGoToAudioStudio={() => setCurrentView('admin-audio-studio')} onSettings={() => setCurrentView('admin-settings')}
         />
       )}
-      {(currentView === 'admin-create' || currentView === 'admin-edit') && (
-        <AdminEditor 
-            onCancel={() => setCurrentView('admin-dashboard')} 
-            onSave={async () => { await refreshData(); setCurrentView('admin-dashboard'); }} 
-            initialPost={selectedPost || undefined} 
-        />
-      )}
-      {currentView === 'admin-agent-edit' && (
-        <AdminAgentEditor 
-            onCancel={() => setCurrentView('admin-dashboard')} 
-            onSave={async () => { await refreshData(); setCurrentView('admin-dashboard'); }} 
-            initialAgent={selectedAgent || undefined} 
-        />
-      )}
+      {(currentView === 'admin-create' || currentView === 'admin-edit') && <AdminEditor onCancel={() => setCurrentView('admin-dashboard')} onSave={async () => { await refreshData(); setCurrentView('admin-dashboard'); }} initialPost={selectedPost || undefined} />}
+      {currentView === 'admin-agent-edit' && <AdminAgentEditor onCancel={() => setCurrentView('admin-dashboard')} onSave={async () => { await refreshData(); setCurrentView('admin-dashboard'); }} initialAgent={selectedAgent || undefined} />}
       {currentView === 'admin-settings' && <AdminSettings onCancel={() => setCurrentView('admin-dashboard')} />}
       {currentView === 'admin-agents' && <AdminAgentWorkspace onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
       {currentView === 'admin-pricing' && <AdminPriceStrategy onBack={() => setCurrentView('admin-dashboard')} onRefresh={refreshData} />}
       {currentView === 'admin-audio-studio' && <AdminAudioStudio onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
       {currentView === 'library' && (
         <div className="max-w-7xl mx-auto px-4 py-20">
-          <FadeIn className="text-center mb-16">
-            <h1 className="text-5xl font-serif font-bold">My Library</h1>
-            <p className="text-slate-500 mt-4">Your purchased items across this session.</p>
-          </FadeIn>
+          <FadeIn className="text-center mb-16"><h1 className="text-5xl font-serif font-bold">My Library</h1></FadeIn>
           {user && user.purchasedContentIds.length > 0 ? (
              <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[...posts, ...agents, ...astroAgents].filter(p => user.purchasedContentIds.includes(p.id)).map(item => (
                     <StaggerItem key={item.id}>
-                        {'type' in item ? (
-                          <ArticleCard post={item as Post} onClick={handlePostClick} />
-                        ) : (
-                          <AgentCard agent={item as Agent} onChat={handleAgentChat} onCall={handleAgentCall} />
-                        )}
+                        {'type' in item ? <ArticleCard post={item as Post} onClick={handlePostClick} /> : <AgentCard agent={item as Agent} onChat={handleAgentChat} onCall={handleAgentCall} />}
                     </StaggerItem>
                 ))}
              </StaggerGrid>
           ) : (
-            <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl">
-                <BookOpen className="mx-auto text-slate-300 mb-4" size={48} />
-                <p className="text-slate-400">You haven't purchased any premium content yet.</p>
-                <button onClick={() => setCurrentView('home')} className="mt-4 text-rose-600 font-bold hover:underline">Explore the Directory</button>
-            </div>
+            <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl"><BookOpen className="mx-auto text-slate-300 mb-4" size={48} /><p className="text-slate-400">Your library is empty.</p></div>
           )}
         </div>
       )}
