@@ -205,11 +205,16 @@ const App: React.FC = () => {
   };
 
   const handleDeletePost = async (id: string) => {
+      // Optimistic update
+      setPosts(prev => prev.filter(p => p.id !== id));
       await storageDeletePost(id);
       await refreshData();
   };
 
   const handleDeleteAgent = async (id: string) => {
+      // Optimistic update
+      setAgents(prev => prev.filter(a => a.id !== id));
+      setAstroAgents(prev => prev.filter(a => a.id !== id));
       await storageDeleteAgent(id);
       await refreshData();
   };

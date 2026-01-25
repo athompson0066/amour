@@ -43,6 +43,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'experts'>('content');
   const [expertSubTab, setExpertSubTab] = useState<'relationship' | 'astro'>('relationship');
@@ -55,12 +56,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (activeTab === 'content') {
-        await onDelete(id);
-    } else {
-        await onDeleteAgent(id);
+    setIsDeletingId(id);
+    try {
+        if (activeTab === 'content') {
+            await onDelete(id);
+        } else {
+            await onDeleteAgent(id);
+        }
+        // Brief local delay to ensure UI updates smoothly after async logic
+        setTimeout(() => {
+            setDeleteConfirm(null);
+            setIsDeletingId(null);
+        }, 300);
+    } catch (e) {
+        console.error("Dashboard delete operation failed", e);
+        setIsDeletingId(null);
     }
-    setDeleteConfirm(null);
   };
 
   const copyShortcode = (agent: Agent) => {
@@ -255,7 +266,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 <img src={post.coverImage} alt="" className="h-full w-full object-cover" />
                                             </div>
                                             <div>
-                                                <div className="font-medium text-slate-900 line-clamp-1">{post.title}</div>
+                                                <div className={`font-medium text-slate-900 line-clamp-1 ${isDeletingId === post.id ? 'opacity-30' : ''}`}>{post.title}</div>
                                                 <div className="text-xs text-slate-500 line-clamp-1">{post.subtitle || 'No subtitle'}</div>
                                             </div>
                                         </div>
@@ -277,9 +288,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <td className="px-6 py-4 text-right">
                                         {deleteConfirm === post.id ? (
                                             <div className="flex items-center justify-end space-x-2 animate-in fade-in slide-in-from-right-4 duration-200">
-                                                <span className="text-xs text-red-600 font-bold mr-2">Sure?</span>
-                                                <button onClick={() => handleDelete(post.id)} className="px-3 py-1 bg-red-600 text-white text-xs rounded-md">Yes</button>
-                                                <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-md">No</button>
+                                                <span className="text-xs text-red-600 font-bold mr-2">{isDeletingId === post.id ? 'Removing...' : 'Sure?'}</span>
+                                                <button 
+                                                    disabled={isDeletingId === post.id} 
+                                                    onClick={() => handleDelete(post.id)} 
+                                                    className="px-3 py-1 bg-red-600 text-white text-xs rounded-md disabled:opacity-50"
+                                                >
+                                                    {isDeletingId === post.id ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+                                                </button>
+                                                <button 
+                                                    disabled={isDeletingId === post.id} 
+                                                    onClick={() => setDeleteConfirm(null)} 
+                                                    className="px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-md disabled:opacity-50"
+                                                >
+                                                    No
+                                                </button>
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -330,7 +353,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             <div className="h-10 w-10 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow-sm">
                                                 <img src={agent.avatar} alt="" className="h-full w-full object-cover" />
                                             </div>
-                                            <div className="font-medium text-slate-900">{agent.name}</div>
+                                            <div className={`font-medium text-slate-900 ${isDeletingId === agent.id ? 'opacity-30' : ''}`}>{agent.name}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600 font-medium">{agent.role}</td>
@@ -338,9 +361,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <td className="px-6 py-4 text-right">
                                         {deleteConfirm === agent.id ? (
                                             <div className="flex items-center justify-end space-x-2 animate-in fade-in slide-in-from-right-4 duration-200">
-                                                <span className="text-xs text-red-600 font-bold mr-2">Sure?</span>
-                                                <button onClick={() => handleDelete(agent.id)} className="px-3 py-1 bg-red-600 text-white text-xs rounded-md">Yes</button>
-                                                <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-md">No</button>
+                                                <span className="text-xs text-red-600 font-bold mr-2">{isDeletingId === agent.id ? 'Removing...' : 'Sure?'}</span>
+                                                <button 
+                                                    disabled={isDeletingId === agent.id} 
+                                                    onClick={() => handleDelete(agent.id)} 
+                                                    className="px-3 py-1 bg-red-600 text-white text-xs rounded-md disabled:opacity-50"
+                                                >
+                                                    {isDeletingId === agent.id ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+                                                </button>
+                                                <button 
+                                                    disabled={isDeletingId === agent.id} 
+                                                    onClick={() => setDeleteConfirm(null)} 
+                                                    className="px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-md disabled:opacity-50"
+                                                >
+                                                    No
+                                                </button>
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
