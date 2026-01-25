@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Agent } from '../types';
-import { MessageCircle, Phone, Video } from 'lucide-react';
+import { MessageCircle, Phone, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface AgentCardProps {
@@ -15,12 +16,10 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onChat, onCall }) => {
       whileHover={{ y: -8, transition: { duration: 0.3 } }}
       className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-2xl hover:shadow-rose-100/50 transition-all duration-300 border border-slate-100 overflow-hidden flex flex-col h-full group relative"
     >
-      {/* Top Gradient Line - Reveals on Hover */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-rose-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
       <div className="p-6 flex flex-col items-center text-center flex-grow relative z-10">
         <div className="relative mb-5">
-          {/* Avatar Container with glowing ring animation on hover */}
           <motion.div 
             className="w-28 h-28 rounded-full p-1 bg-gradient-to-br from-rose-100 to-slate-100 group-hover:from-rose-400 group-hover:to-purple-400 transition-colors duration-500"
             whileHover={{ scale: 1.05 }}
@@ -30,14 +29,11 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onChat, onCall }) => {
              </div>
           </motion.div>
           
-          {/* Status Indicator */}
-          {agent.isOnline ? (
+          {agent.isOnline && (
             <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 border-[3px] border-white rounded-full flex items-center justify-center z-20 shadow-sm" title="Online Now">
                <div className="w-2 h-2 bg-white rounded-full animate-ping absolute opacity-75"></div>
                <div className="w-1.5 h-1.5 bg-white rounded-full relative z-10"></div>
             </div>
-          ) : (
-             <div className="absolute bottom-2 right-2 w-6 h-6 bg-slate-300 border-[3px] border-white rounded-full flex items-center justify-center z-20 shadow-sm" title="Offline"></div>
           )}
         </div>
         
@@ -58,9 +54,12 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onChat, onCall }) => {
       </div>
 
       <div className="p-5 bg-gradient-to-b from-white to-slate-50/50 border-t border-slate-100">
-         <div className="flex justify-between items-center mb-4 text-xs font-semibold text-slate-500">
-             <span>Session Rate</span>
-             <span className="text-slate-900 font-bold bg-white px-2 py-1 rounded shadow-sm border border-slate-100">{agent.price}</span>
+         <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+             <span>Interaction Cost</span>
+             <span className="text-slate-900 font-black bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100 flex items-center">
+                <Zap size={10} className="mr-1 text-amber-500 fill-current" />
+                {agent.tokenCost} Tokens / Msg
+             </span>
          </div>
          <div className="grid grid-cols-2 gap-3">
             <motion.button 
@@ -70,7 +69,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onChat, onCall }) => {
                 className="flex items-center justify-center space-x-2 bg-white border border-slate-200 text-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold hover:border-rose-200 hover:text-rose-600 hover:shadow-md hover:shadow-rose-100/50 transition-all"
             >
                 <MessageCircle size={16} />
-                <span>Text Chat</span>
+                <span>Text Consult</span>
             </motion.button>
             <motion.button 
                 whileHover={{ scale: 1.02 }}
@@ -78,8 +77,8 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onChat, onCall }) => {
                 onClick={() => onCall(agent)}
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-500 text-white px-3 py-2.5 rounded-xl text-xs font-bold shadow-md shadow-rose-200 hover:shadow-lg hover:shadow-rose-300 transition-all"
             >
-                <Phone size={16} className="fill-current" />
-                <span>Call Now</span>
+                <Zap size={14} className="fill-current text-amber-300" />
+                <span>Audio Session</span>
             </motion.button>
          </div>
       </div>

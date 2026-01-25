@@ -15,7 +15,6 @@ export const DEFAULT_AUTHOR: Author = {
   bio: 'Relationship Psychologist & Love Coach',
 };
 
-// PREVIOUS POSTS RESTORED
 const SEED_DATA: Post[] = [
   {
     id: 'course-1',
@@ -33,84 +32,170 @@ const SEED_DATA: Post[] = [
     tags: ['Psychology', 'Healing', 'Growth'],
     blocks: [
       { id: 'b1', type: 'header', content: 'Module 1: Foundations of Attachment' },
-      { id: 'b2', type: 'text', content: 'In this module, we explore the origins of attachment theory and how your early caregivers shaped your adult relationship dynamics.' }
+      { id: 'b2', type: 'text', content: 'Explore the origins of attachment theory.' }
     ]
-  },
-  {
-    id: 'article-1',
-    title: 'The 7 Languages of Emotional Intimacy',
-    subtitle: 'Beyond just physical touch—how to build a soul-level connection that withstands time.',
-    type: 'article',
-    coverImage: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=800&h=400',
-    author: DEFAULT_AUTHOR,
-    publishedAt: new Date(Date.now() - 86400000).toISOString(),
-    readTime: '12 min read',
-    isPremium: false,
-    tags: ['Intimacy', 'Communication', 'Wisdom'],
-    blocks: [
-      { id: 'a1', type: 'text', content: 'Intimacy is more than just proximity; it is the art of being seen and known in your most vulnerable state.' }
-    ]
-  },
-  {
-    id: 'podcast-1',
-    title: 'Midnight Musings: Healing After Loss',
-    subtitle: 'A raw and unfiltered conversation on navigating the void and reclaiming your identity.',
-    type: 'podcast',
-    coverImage: 'https://images.unsplash.com/photo-1478737270239-2fccd2c78621?auto=format&fit=crop&q=80&w=800&h=400',
-    author: { ...DEFAULT_AUTHOR, name: 'Amour Audio' },
-    publishedAt: new Date(Date.now() - 172800000).toISOString(),
-    readTime: '45 min listen',
-    isPremium: true,
-    price: 9.99,
-    payhipProductUrl: 'https://payhip.com/b/example-pod',
-    unlockPassword: 'MIDNIGHT-MEND',
-    tags: ['Audio', 'Healing', 'Breakups'],
-    blocks: []
-  },
-  {
-    id: 'app-1',
-    title: 'The Heart Mend Journey Tracker',
-    subtitle: 'Visualize your healing, track your mood, and reclaim your peace after a breakup.',
-    type: 'app',
-    coverImage: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=800&h=400',
-    author: { ...DEFAULT_AUTHOR, name: 'Amour Tools' },
-    publishedAt: new Date(Date.now() - 259200000).toISOString(),
-    readTime: 'Interactive Tool',
-    isPremium: true,
-    price: 14.99,
-    tags: ['Healing', 'Wellness', 'Tracker'],
-    blocks: []
   }
 ];
 
 const BASE_AGENTS: Agent[] = [
+  // --- CORE RELATIONSHIP EXPERTS (5 Tokens/msg) ---
   {
     id: 'agent-1',
     name: 'Dr. Elena Rose',
-    role: 'Relationship Psychologist',
+    role: 'Lead Relationship Psychologist',
     category: 'relationship',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200',
-    description: 'Specializing in attachment theory and cognitive behavioral therapy for couples.',
-    price: '$2.99/min',
-    priceValue: 2.99,
+    description: 'Specializing in breaking repetitive toxic cycles and healing the root causes of anxious attachment.',
+    tokenCost: 5,
     isOnline: true,
     expertise: ['Attachment Styles', 'Conflict Resolution', 'Trauma Healing']
   },
   {
-    id: 'agent-2',
-    name: 'Marcus Thorne',
-    role: 'Communication Specialist',
+    id: 'agent-coach',
+    name: 'Sarah Chen',
+    role: 'Conscious Dating Strategist',
     category: 'relationship',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200&h=200',
-    description: 'Expert in non-violent communication and restoring lost intimacy in long-term marriages.',
-    price: '$3.50/min',
-    priceValue: 3.50,
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200&h=200',
+    description: 'Transforming how you date by focusing on radical self-worth and identifying red flags.',
+    tokenCost: 5,
     isOnline: true,
-    expertise: ['NVC', 'Intimacy Recovery', 'Active Listening']
+    expertise: ['Modern Dating', 'Self-Worth', 'Boundary Setting']
+  },
+  
+  // --- THE ASTRO-COUNCIL (10 Tokens/msg) ---
+  {
+    id: 'astro-aries',
+    name: 'Jordan Vane',
+    role: 'Aries Passion & Conflict Strategist',
+    category: 'astro',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200&h=200',
+    description: 'Stop burning bridges with your intensity. Learn how to date an Aries without the constant ego-clashes.',
+    tokenCost: 10,
+    isOnline: true,
+    expertise: ['Impulse Control', 'Direct Communication', 'Healthy Competition']
+  },
+  {
+    id: 'astro-taurus',
+    name: 'Elena Rossi',
+    role: 'Taurus Stability & Sensuality Advisor',
+    category: 'astro',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200&h=200',
+    description: 'Stuck in a comfort zone that feels like a prison? I help Taurus souls build reliable love.',
+    tokenCost: 10,
+    isOnline: true,
+    expertise: ['Overcoming Inertia', 'Sensual Wealth', 'Long-term Trust']
+  },
+  {
+      id: 'astro-gemini',
+      name: 'Liam Sterling',
+      role: 'Gemini Communication & Connection Coach',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Tired of being labeled a "ghost"? I help Gemini souls find emotional depth.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Consistency Coaching', 'Digital Banter', 'Mind-Heart Sync']
+  },
+  {
+      id: 'astro-cancer',
+      name: 'Sophia Moon',
+      role: 'Cancer Vulnerability & Security Mentor',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1491349174775-aaafddd81942?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Is your "shell" scaring away the right people? Heal past betrayal with Sophia.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Inner Child Healing', 'Safe Intimacy', 'Family Dynamics']
+  },
+  {
+      id: 'astro-leo',
+      name: 'Julian Hart',
+      role: 'Leo Self-Love & Romance Specialist',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Stop seeking validation. Julian helps Leos find magnetism through radical self-love.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Confidence Building', 'Generosity', 'Creative Dating']
+  },
+  {
+      id: 'astro-virgo',
+      name: 'Clara Thorne',
+      role: 'Virgo Harmony & Standards Analyst',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Is your "checklist" killing chemistry? Clara helps Virgos lower the inner critic.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Anxiety Management', 'Acts of Service', 'Relationship Flow']
+  },
+  {
+      id: 'astro-libra',
+      name: 'Oliver Gray',
+      role: 'Libra Partnership & Identity Consultant',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Losing yourself again? Oliver teaches Libras how to find their voice in union.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Boundary Setting', 'Fair Negotiation', 'Self-Individuation']
+  },
+  {
+      id: 'astro-scorpio',
+      name: 'Damien Cross',
+      role: 'Scorpio Trust & Transformation Expert',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Dating a Scorpio can feel like an interrogation. Damien trades suspicion for merging.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Shadow Integration', 'Intense Intimacy', 'Radical Trust']
+  },
+  {
+      id: 'astro-sagittarius',
+      name: 'Maya Archer',
+      role: 'Sagittarius Freedom & Commitment Guide',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Terrified of the "ball and chain"? Maya finds commitment that feels like expansion.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Commitment Phobia', 'Spiritual Growth', 'Honest Dating']
+  },
+  {
+      id: 'astro-capricorn',
+      name: 'Arthur Peak',
+      role: 'Capricorn Devotion & Legacy Strategist',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Career thriving but heart starving? Arthur builds a lasting legacy of love.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Emotional Availability', 'Work-Life-Love Balance', 'Stability']
+  },
+  {
+      id: 'astro-aquarius',
+      name: 'Quinn Nova',
+      role: 'Aquarius Independence & Intimacy Expert',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Dating an Aquarius can feel like dating a robot. Quinn bridges the detachment gap.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Intellectual Sparks', 'Futuristic Love', 'Individuality']
+  },
+  {
+      id: 'astro-pisces',
+      name: 'Isabella Marina',
+      role: 'Pisces Boundaries & Soul-Bonding Mentor',
+      category: 'astro',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200',
+      description: 'Drowning in other people\'s emotions? Isabella protects your heart to find your twin.',
+      tokenCost: 10,
+      isOnline: true,
+      expertise: ['Empathy Limits', 'Spiritual Union', 'Reality Alignment']
   }
 ];
-
-// --- INTERNAL HELPERS ---
 
 const getDeletedIds = (): string[] => {
     try {
@@ -133,8 +218,6 @@ const removeFromBlacklist = (id: string) => {
     localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(newIds));
 };
 
-// --- MAPPING UTILS ---
-
 const mapRowToPost = (row: any): Post => ({
   id: row.id,
   title: row.title,
@@ -150,7 +233,8 @@ const mapRowToPost = (row: any): Post => ({
   unlockPassword: row.unlock_password || undefined,
   tags: row.tags || [],
   blocks: row.blocks || [],
-  relatedVideos: row.related_videos || []
+  relatedVideos: row.related_videos || [],
+  seo: row.seo || undefined
 });
 
 const mapPostToRow = (post: Post) => ({
@@ -168,7 +252,8 @@ const mapPostToRow = (post: Post) => ({
     unlock_password: post.unlockPassword || null,
     tags: post.tags || [],
     blocks: post.blocks || [],
-    related_videos: post.relatedVideos || []
+    related_videos: post.relatedVideos || [],
+    seo: post.seo || null
 });
 
 const mapRowToAgent = (row: any): Agent => ({
@@ -180,6 +265,7 @@ const mapRowToAgent = (row: any): Agent => ({
     description: row.description,
     systemInstruction: row.system_instruction,
     embedCode: row.embed_code,
+    tokenCost: row.token_cost || 5, // Map token cost
     price: row.price,
     priceValue: row.price_value,
     payhipProductUrl: row.payhip_product_url,
@@ -187,7 +273,8 @@ const mapRowToAgent = (row: any): Agent => ({
     isOnline: row.is_online ?? true,
     expertise: row.expertise || [],
     tools: row.tools || {},
-    thinkingBudget: row.thinking_budget || 0
+    thinkingBudget: row.thinking_budget || 0,
+    seo: row.seo || undefined
 });
 
 const mapAgentToRow = (agent: Agent) => ({
@@ -199,17 +286,17 @@ const mapAgentToRow = (agent: Agent) => ({
     description: agent.description,
     system_instruction: agent.systemInstruction || null,
     embed_code: agent.embedCode || null,
-    price: agent.price,
-    price_value: agent.priceValue || 0,
+    token_cost: agent.tokenCost,
+    price: agent.price || null,
+    price_value: agent.priceValue || null,
     payhip_product_url: agent.payhipProductUrl || null,
     unlock_password: agent.unlockPassword || null,
     is_online: !!agent.isOnline,
     expertise: agent.expertise || [],
     tools: agent.tools || {},
-    thinking_budget: agent.thinkingBudget || 0
+    thinking_budget: agent.thinkingBudget || 0,
+    seo: agent.seo || null
 });
-
-// --- POSTS SERVICE ---
 
 export const getPosts = async (): Promise<Post[]> => {
   const supabase = getSupabase();
@@ -229,14 +316,8 @@ export const getPosts = async (): Promise<Post[]> => {
   const stored = localStorage.getItem(STORAGE_KEY);
   const localPosts: Post[] = stored ? JSON.parse(stored) : SEED_DATA;
   
-  // Logic: Local data is primary source for updates, Cloud is backup.
-  // We merge cloud items that don't exist locally or update local ones if Cloud has newer info.
-  // Actually, for user simple usage, if sync fails, we want Local to persist.
   const combinedMap = new Map<string, Post>();
-  
-  // 1. Load Cloud data
   supabasePosts.forEach(p => combinedMap.set(p.id, p));
-  // 2. Overwrite with Local data (contains latest unpublished changes)
   localPosts.forEach(p => combinedMap.set(p.id, p));
 
   const combined = Array.from(combinedMap.values());
@@ -249,7 +330,6 @@ export const getPosts = async (): Promise<Post[]> => {
 export const savePost = async (post: Post): Promise<void> => {
   removeFromBlacklist(post.id);
 
-  // 1. Update Local Storage immediately
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
       let currentPosts: Post[] = stored ? JSON.parse(stored) : [...SEED_DATA];
@@ -257,36 +337,25 @@ export const savePost = async (post: Post): Promise<void> => {
       if (idx >= 0) currentPosts[idx] = post;
       else currentPosts.unshift(post);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPosts));
-      console.log("Locally saved post:", post.id);
   } catch (e) {
       console.error("Local save failed:", e);
   }
 
-  // 2. Sync to Cloud
   const supabase = getSupabase();
   if (supabase) {
     try {
       const row = mapPostToRow(post);
       const { error } = await supabase.from('posts').upsert(row);
-      if (error) {
-          console.error("CLOUD SYNC FAILED:", error.message, error.details);
-          alert(`Cloud Sync Failed: ${error.message}. Your post is saved locally on this browser but won't appear on Vercel/Production until sync succeeds.`);
-      } else {
-          console.log("Cloud sync successful.");
-      }
+      if (error) console.error("CLOUD SYNC FAILED:", error.message, error.details);
     } catch (e: any) {
       console.error("Cloud sync exception:", e);
     }
-  } else {
-      console.warn("Supabase client not initialized. Only local save performed.");
   }
 };
 
 export const deletePost = async (id: string): Promise<void> => {
-  console.log("Service: Initiating deletion for", id);
   addToBlacklist(id);
 
-  // Update Local Storage Array
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
       let currentPosts: Post[] = stored ? JSON.parse(stored) : [...SEED_DATA];
@@ -294,17 +363,13 @@ export const deletePost = async (id: string): Promise<void> => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newPosts));
   } catch (e) {}
 
-  // Sync to Cloud
   const supabase = getSupabase();
   if (supabase) {
     try { 
-        const { error } = await supabase.from('posts').delete().eq('id', id); 
-        if (error) console.error("Cloud delete error:", error.message);
+        await supabase.from('posts').delete().eq('id', id); 
     } catch (e) {}
   }
 };
-
-// --- AGENTS SERVICE ---
 
 export const getAgentsData = async (): Promise<Agent[]> => {
     const supabase = getSupabase();
@@ -337,7 +402,6 @@ export const getAgentsData = async (): Promise<Agent[]> => {
 };
 
 export const getAgents = () => {
-    // Legacy sync version used in some views
     const blacklisted = getDeletedIds();
     const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
     const overrides = JSON.parse(localStorage.getItem(AGENT_OVERRIDES_KEY) || '{}');
@@ -349,7 +413,9 @@ export const getAgents = () => {
 export const getAstroAgents = () => {
     const blacklisted = getDeletedIds();
     const custom = JSON.parse(localStorage.getItem(AGENT_CUSTOM_KEY) || '[]');
-    return custom.filter((a: any) => a.category === 'astro' && !blacklisted.includes(a.id));
+    const overrides = JSON.parse(localStorage.getItem(AGENT_OVERRIDES_KEY) || '{}');
+    return [...BASE_AGENTS.map(a => ({...a, ...(overrides[a.id] || {})})), ...custom]
+        .filter((a: any) => a.category === 'astro' && !blacklisted.includes(a.id));
 };
 
 export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promise<void> => {
@@ -375,8 +441,7 @@ export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promi
     if (supabase) {
         try {
             const row = mapAgentToRow(fullAgent);
-            const { error } = await supabase.from('agents').upsert(row);
-            if (error) console.error("Agent cloud sync failed:", error.message);
+            await supabase.from('agents').upsert(row);
         } catch (e) {}
     }
 };

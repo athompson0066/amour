@@ -16,6 +16,7 @@ import AgentCard from './components/AgentCard';
 import ChatInterface from './components/ChatInterface';
 import VoiceInterface from './components/VoiceInterface';
 import PaymentModal from './components/PaymentModal';
+import TokenStore from './components/TokenStore';
 import VideoHub from './components/VideoHub';
 import HeartMendTracker from './components/apps/HeartMendTracker';
 import SoulmateSketch from './components/SoulmateSketch';
@@ -24,7 +25,7 @@ import { FadeIn, StaggerGrid, StaggerItem } from './components/Animated';
 import { Post, ContentType, Agent, User } from './types';
 import { getPosts, getAgentsData, deletePost as storageDeletePost, deleteAgent as storageDeleteAgent } from './services/storage';
 import { getCurrentUser, updateUser, isAdminAuthenticated, logoutAdmin } from './services/authService';
-import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Search as SearchIcon } from 'lucide-react';
 
 const POSTS_PER_PAGE = 9;
 
@@ -43,6 +44,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isExternalEmbed, setIsExternalEmbed] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   const [currentPage, setCurrentPage] = useState(1);
   const [user, setUser] = useState<User | null>(null);
@@ -71,20 +73,7 @@ const App: React.FC = () => {
         const params = new URLSearchParams(window.location.search);
         const postId = params.get('post');
         const agentId = params.get('agent');
-        const embedId = params.get('embed');
         
-        if (embedId) {
-            getAgentsData().then(allAgents => {
-                const target = allAgents.find(a => a.id === embedId || a.embedCode === embedId);
-                if (target) {
-                    setSelectedAgent(target);
-                    setIsExternalEmbed(true);
-                    setCurrentView('chat');
-                }
-            });
-            return;
-        }
-
         if (postId) {
             getPosts().then(allPosts => {
                 const target = allPosts.find(p => p.id === postId);
@@ -103,10 +92,6 @@ const App: React.FC = () => {
     };
     initUser();
   }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterType, searchQuery]);
 
   const handleToggleAdmin = () => {
     if (isAdminMode) {
@@ -160,9 +145,8 @@ const App: React.FC = () => {
   };
 
   const handleAgentChat = (agent: Agent) => {
-    if (!checkAccess(agent.id, true)) {
-        setPendingPaymentItem(agent);
-        setShowPaymentModal(true);
+    if (!user || user.tokens < agent.tokenCost) {
+        setCurrentView('token-store');
         return;
     }
     setSelectedAgent(agent);
@@ -170,9 +154,8 @@ const App: React.FC = () => {
   };
   
   const handleAgentCall = (agent: Agent) => {
-    if (!checkAccess(agent.id, true)) {
-        setPendingPaymentItem(agent);
-        setShowPaymentModal(true);
+    if (!user || user.tokens < agent.tokenCost) {
+        setCurrentView('token-store');
         return;
     }
     setSelectedAgent(agent);
@@ -205,17 +188,8 @@ const App: React.FC = () => {
   };
 
   const handleDeletePost = async (id: string) => {
-      // Optimistic update
       setPosts(prev => prev.filter(p => p.id !== id));
       await storageDeletePost(id);
-      await refreshData();
-  };
-
-  const handleDeleteAgent = async (id: string) => {
-      // Optimistic update
-      setAgents(prev => prev.filter(a => a.id !== id));
-      setAstroAgents(prev => prev.filter(a => a.id !== id));
-      await storageDeleteAgent(id);
       await refreshData();
   };
 
@@ -230,6 +204,7 @@ const App: React.FC = () => {
   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
 
   const handlePageChange = (page: number) => {
+      if (page < 1 || page > totalPages) return;
       setCurrentPage(page);
       document.getElementById('directory-content')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -256,10 +231,6 @@ const App: React.FC = () => {
       }
       setCurrentView('soulmate-sketch');
   };
-
-  if (isExternalEmbed && selectedAgent && currentView === 'chat') {
-      return <div className="h-screen w-full bg-transparent"><ChatInterface agent={selectedAgent} onBack={() => {}} /></div>;
-  }
 
   return (
     <Layout 
@@ -302,98 +273,104 @@ const App: React.FC = () => {
             onSketch={handleSketchClick}
           />
           <div id="directory-content" className="max-w-7xl mx-auto px-4 py-20">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-                <div className="flex flex-wrap gap-2">
-                    {(['all', 'article', 'course', 'podcast', 'app', 'guide', 'ebook', 'newsletter'] as const).map((t) => (
-                        <button 
-                            key={t} 
-                            onClick={() => setFilterType(t)} 
-                            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 transform active:scale-95 ${
-                                filterType === t 
-                                ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
-                                : 'bg-white border border-slate-100 text-slate-600 hover:border-rose-200 hover:text-rose-600'
-                            }`}
-                        >
-                            {t === 'all' ? 'All' : `${t}s`}
-                        </button>
-                    ))}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-12 gap-8">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap gap-2 p-1.5 bg-white/50 backdrop-blur rounded-2xl border border-white/50 shadow-sm">
+                        {(['all', 'article', 'course', 'podcast', 'website', 'app', 'newsletter'] as const).map((t) => (
+                            <button 
+                                key={t} 
+                                onClick={() => { setFilterType(t); setCurrentPage(1); }} 
+                                className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+                                    filterType === t 
+                                    ? 'bg-slate-900 text-white shadow-lg' 
+                                    : 'text-slate-500 hover:text-rose-600 hover:bg-white'
+                                }`}
+                            >
+                                {t === 'all' ? 'all' : `${t}s`}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-                <div className="flex items-center space-x-3 text-slate-400 text-sm font-medium">
-                    <span className="bg-rose-50 text-rose-600 px-3 py-1 rounded-full font-bold">
-                        {filteredPosts.length}
-                    </span>
-                    <span>Resources Found</span>
+
+                <div className="flex items-center space-x-4">
+                    <div className="relative group flex-grow md:w-80">
+                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-400 transition-colors" size={18} />
+                        <input 
+                            type="text" 
+                            placeholder="Search directory..."
+                            value={searchQuery}
+                            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                            className="w-full pl-12 pr-4 py-3.5 bg-white/50 backdrop-blur rounded-2xl border border-white/50 outline-none focus:ring-4 focus:ring-rose-500/5 focus:border-rose-200 transition-all text-sm font-medium"
+                        />
+                    </div>
                 </div>
             </div>
 
             {isLoadingPosts ? (
                 <div className="py-20 flex flex-col items-center justify-center">
                     <Loader2 className="animate-spin text-rose-500 mb-4" size={40} />
-                    <p className="text-slate-400 font-medium animate-pulse">Gathering content...</p>
                 </div>
             ) : (
-                <AnimatePresence mode="wait">
-                    {filteredPosts.length > 0 ? (
-                        <div key={filterType + currentPage}>
-                            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <>
+                    <AnimatePresence mode="wait">
+                        {paginatedPosts.length > 0 ? (
+                            <StaggerGrid className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "flex flex-col space-y-8"}>
                                 {paginatedPosts.map(post => (
                                     <StaggerItem key={post.id}>
-                                        <ArticleCard post={post} onClick={handlePostClick} />
+                                        <ArticleCard post={post} onClick={handlePostClick} viewMode={viewMode} />
                                     </StaggerItem>
                                 ))}
                             </StaggerGrid>
-                            {totalPages > 1 && (
-                                <div className="mt-16 flex flex-col items-center">
-                                    <div className="flex items-center space-x-2">
-                                        <button 
-                                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                                            disabled={currentPage === 1}
-                                            className="p-3 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                                        >
-                                            <ChevronLeft size={20} />
-                                        </button>
-                                        <div className="flex items-center px-4 space-x-1">
-                                            {[...Array(totalPages)].map((_, i) => {
-                                                const page = i + 1;
-                                                return (
-                                                    <button
-                                                        key={page}
-                                                        onClick={() => handlePageChange(page)}
-                                                        className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${
-                                                            currentPage === page
-                                                            ? 'bg-rose-600 text-white shadow-lg shadow-rose-200'
-                                                            : 'bg-white text-slate-500 hover:bg-rose-50 hover:text-rose-600'
-                                                        }`}
-                                                    >
-                                                        {page}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                        <button 
-                                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                                            disabled={currentPage === totalPages}
-                                            className="p-3 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="py-24 text-center bg-white/50 backdrop-blur-sm rounded-3xl border-2 border-dashed border-slate-200">
-                            <Inbox className="mx-auto text-slate-200 mb-4" size={64} />
-                            <h3 className="text-xl font-bold text-slate-800">No content found</h3>
-                            <button onClick={() => setFilterType('all')} className="mt-6 text-rose-600 font-bold hover:underline">Clear all filters</button>
+                        ) : (
+                            <div className="py-20 text-center">
+                                <SearchIcon className="mx-auto text-slate-200 mb-4" size={48} />
+                                <h3 className="text-xl font-serif font-bold text-slate-900">No content matches your search</h3>
+                                <p className="text-slate-500 mt-2">Try adjusting your filters or keywords.</p>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Pagination UI */}
+                    {totalPages > 1 && (
+                        <div className="mt-20 flex justify-center items-center space-x-2">
+                            <button 
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="p-3 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all bg-white shadow-sm"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                            
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => handlePageChange(page)}
+                                    className={`w-12 h-12 rounded-xl text-sm font-black transition-all ${
+                                        currentPage === page 
+                                        ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/20' 
+                                        : 'bg-white border border-slate-100 text-slate-500 hover:border-rose-200 hover:text-rose-600 shadow-sm'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+
+                            <button 
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="p-3 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all bg-white shadow-sm"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
                         </div>
                     )}
-                </AnimatePresence>
+                </>
             )}
           </div>
         </>
       )}
 
+      {currentView === 'token-store' && <TokenStore onBack={() => setCurrentView('home')} />}
       {currentView === 'toolkit' && (
          <div className="max-w-7xl mx-auto px-4 py-20">
              <FadeIn className="text-center mb-16"><h1 className="text-5xl font-serif font-bold">Relationship Toolkit</h1></FadeIn>
@@ -405,7 +382,6 @@ const App: React.FC = () => {
                             <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Soulmate Sketch</h3>
                             <p className="text-slate-500 text-sm mb-6">Manifest a hand-drawn psychic portrait of your fated match.</p>
                         </div>
-                        <div className="mt-auto pt-6 flex justify-between items-center border-t border-slate-50"><span className="text-rose-600 font-bold">$29.99 One-time</span><div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-rose-200"><Sparkles size={18} /></div></div>
                     </div>
                 </StaggerItem>
                 {posts.filter(p => p.type === 'app').map(app => <StaggerItem key={app.id}><ArticleCard post={app} onClick={handlePostClick} /></StaggerItem>)}
@@ -434,7 +410,7 @@ const App: React.FC = () => {
       {currentView === 'app-heart-mend' && <HeartMendTracker user={user} onBack={() => setCurrentView('toolkit')} />}
       {currentView === 'soulmate-sketch' && <SoulmateSketch isUnlocked={true} onUnlock={() => {}} onBack={() => setCurrentView('toolkit')} />}
       {currentView === 'video-hub' && <VideoHub />}
-      {currentView === 'chat' && selectedAgent && <ChatInterface agent={selectedAgent} onBack={() => setCurrentView('agents')} />}
+      {currentView === 'chat' && selectedAgent && <ChatInterface agent={selectedAgent} onBack={() => { refreshData(); setCurrentView('agents'); }} />}
       {currentView === 'voice' && selectedAgent && <VoiceInterface agent={selectedAgent} onEndCall={() => setCurrentView('agents')} />}
       {currentView === 'article' && selectedPost && (
         <ArticleView post={selectedPost} user={user} onBack={() => { const url = new URL(window.location.href); url.searchParams.delete('post'); window.history.pushState({}, '', url); setCurrentView('home'); }} onUnlock={() => { setPendingPaymentItem(selectedPost); setShowPaymentModal(true); }} onLoginRequest={() => {}} />
@@ -447,7 +423,7 @@ const App: React.FC = () => {
           onCreateAgent={() => { setSelectedAgent(null); setCurrentView('admin-agent-edit'); }}
           onEdit={(p) => { setSelectedPost(p); setCurrentView('admin-edit'); }} 
           onEditAgent={(a) => { setSelectedAgent(a); setCurrentView('admin-agent-edit'); }}
-          onView={handlePostClick} onDelete={handleDeletePost} onDeleteAgent={handleDeleteAgent}
+          onView={handlePostClick} onDelete={handleDeletePost} onDeleteAgent={async (id) => { await storageDeleteAgent(id); refreshData(); }}
           onGoToWorkspace={() => setCurrentView('admin-agents')} onGoToPricing={() => setCurrentView('admin-pricing')}
           onGoToAudioStudio={() => setCurrentView('admin-audio-studio')} onSettings={() => setCurrentView('admin-settings')}
         />
@@ -458,22 +434,6 @@ const App: React.FC = () => {
       {currentView === 'admin-agents' && <AdminAgentWorkspace onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
       {currentView === 'admin-pricing' && <AdminPriceStrategy onBack={() => setCurrentView('admin-dashboard')} onRefresh={refreshData} />}
       {currentView === 'admin-audio-studio' && <AdminAudioStudio onBack={() => setCurrentView('admin-dashboard')} onPublished={async () => { await refreshData(); }} />}
-      {currentView === 'library' && (
-        <div className="max-w-7xl mx-auto px-4 py-20">
-          <FadeIn className="text-center mb-16"><h1 className="text-5xl font-serif font-bold">My Library</h1></FadeIn>
-          {user && user.purchasedContentIds.length > 0 ? (
-             <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[...posts, ...agents, ...astroAgents].filter(p => user.purchasedContentIds.includes(p.id)).map(item => (
-                    <StaggerItem key={item.id}>
-                        {'type' in item ? <ArticleCard post={item as Post} onClick={handlePostClick} /> : <AgentCard agent={item as Agent} onChat={handleAgentChat} onCall={handleAgentCall} />}
-                    </StaggerItem>
-                ))}
-             </StaggerGrid>
-          ) : (
-            <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl"><BookOpen className="mx-auto text-slate-300 mb-4" size={48} /><p className="text-slate-400">Your library is empty.</p></div>
-          )}
-        </div>
-      )}
     </Layout>
   );
 };

@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
-import { Heart, LayoutDashboard, Menu, X, BookOpen, Settings, ShieldCheck, LogOut, Mail, Instagram, Twitter, Youtube, Send, Sparkles } from 'lucide-react';
+import { Heart, LayoutDashboard, Menu, X, BookOpen, Settings, ShieldCheck, LogOut, Mail, Instagram, Twitter, Youtube, Send, Sparkles, Zap, Facebook, Linkedin } from 'lucide-react';
+// Added missing imports for motion and AnimatePresence
+import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 
 interface LayoutProps {
@@ -43,7 +45,7 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="min-h-screen flex flex-col font-sans text-slate-800 relative selection:bg-rose-200 selection:text-rose-900">
       
       <nav className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-        <div className="glass shadow-lg shadow-rose-900/5 rounded-full px-6 py-3 max-w-5xl w-full flex justify-between items-center transition-all duration-300">
+        <div className="glass shadow-lg shadow-rose-900/5 rounded-full px-6 py-3 max-w-6xl w-full flex justify-between items-center transition-all duration-300">
             <div className="flex items-center cursor-pointer group" onClick={() => onChangeView('home')}>
               <div className="bg-rose-50 p-2 rounded-full group-hover:bg-rose-100 transition-colors">
                 <Heart className="h-5 w-5 text-rose-500 fill-current" />
@@ -73,20 +75,21 @@ const Layout: React.FC<LayoutProps> = ({
                   {item.label}
                 </button>
               ))}
-
-              <button 
-                onClick={() => onChangeView('library')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  currentView === 'library' 
-                    ? 'bg-rose-100 text-rose-700 shadow-inner' 
-                    : 'text-slate-600 hover:text-rose-600 hover:bg-white/50'
-                }`}
-              >
-                My Library
-              </button>
             </div>
 
             <div className="hidden md:flex items-center space-x-3">
+              {/* Token Balance Badge */}
+              <button 
+                onClick={() => onChangeView('token-store')}
+                className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-full hover:bg-slate-800 transition-all shadow-md group"
+              >
+                <Zap size={14} className="text-amber-400 fill-current group-hover:animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-widest">{user?.tokens || 0} Tokens</span>
+                <div className="w-4 h-4 bg-white/10 rounded-full flex items-center justify-center ml-1">
+                    <span className="text-[10px]">+</span>
+                </div>
+              </button>
+
               <div className="flex items-center bg-slate-100/50 rounded-full px-1 py-1 border border-slate-200/50">
                   <button 
                     onClick={toggleAdmin}
@@ -99,18 +102,9 @@ const Layout: React.FC<LayoutProps> = ({
                           : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
                     }`}
                   >
-                    {isAdmin ? <LayoutDashboard size={18} /> : isAdminAuthenticated ? <ShieldCheck size={18} /> : <ShieldCheck size={18} />}
+                    {isAdmin ? <LayoutDashboard size={18} /> : <ShieldCheck size={18} />}
                     {(isAdmin || isAdminAuthenticated) && <span className="text-[10px] font-black uppercase tracking-widest">{isAdmin ? 'Dashboard' : 'Admin'}</span>}
                   </button>
-                  {isAdminAuthenticated && (
-                      <button 
-                        onClick={onAdminLogout}
-                        title="Logout Admin"
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <LogOut size={16} />
-                      </button>
-                  )}
               </div>
             </div>
 
@@ -124,23 +118,15 @@ const Layout: React.FC<LayoutProps> = ({
         {mobileMenuOpen && (
            <div className="absolute top-16 left-4 right-4 glass bg-white/95 rounded-2xl shadow-xl border border-white/50 overflow-hidden lg:hidden">
              <div className="px-4 pt-4 pb-6 space-y-2">
-               {['home', 'toolkit', 'astrology', 'agents', 'video-hub', 'library'].map(view => (
-                   <button key={view} onClick={() => {onChangeView(view); setMobileMenuOpen(false)}} className="block w-full text-left px-4 py-3 text-slate-600 font-medium hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors capitalize">
+               {['home', 'toolkit', 'astrology', 'agents', 'video-hub'].map(view => (
+                   <button key={view} onClick={() => {onChangeView(view); setMobileMenuOpen(false)}} className="block w-full text-left px-4 py-3 text-slate-600 font-medium hover:text-rose-600 rounded-xl transition-colors capitalize">
                        {view.replace('-', ' ')}
                    </button>
                ))}
-               <div className="border-t border-slate-100 pt-2 space-y-1">
-                  <button onClick={() => { toggleAdmin(); setMobileMenuOpen(false); }} className={`block w-full text-left px-4 py-3 font-bold hover:bg-rose-50 rounded-xl transition-colors flex items-center justify-between ${isAdmin ? 'text-rose-600' : 'text-slate-600'}`}>
-                     <span>{isAdmin ? 'Exit Dashboard' : isAdminAuthenticated ? 'Admin Dashboard' : 'Admin Access'}</span>
-                     <ShieldCheck size={18} className={isAdminAuthenticated ? 'text-emerald-500' : 'text-slate-300'} />
-                  </button>
-                  {isAdminAuthenticated && (
-                      <button onClick={() => { onAdminLogout(); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors flex items-center justify-between">
-                         <span>Logout Admin</span>
-                         <LogOut size={18} />
-                      </button>
-                  )}
-               </div>
+                <button onClick={() => {onChangeView('token-store'); setMobileMenuOpen(false)}} className="block w-full text-left px-4 py-3 text-amber-600 font-black rounded-xl transition-colors uppercase tracking-widest flex items-center">
+                   <Zap size={16} className="mr-2 fill-current" />
+                   {user?.tokens || 0} Tokens Available
+               </button>
              </div>
            </div>
         )}
@@ -150,99 +136,111 @@ const Layout: React.FC<LayoutProps> = ({
         {children}
       </main>
 
-      <footer className="mt-20 bg-slate-900 text-slate-300">
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+      <footer className="mt-20 bg-slate-950 text-slate-300 relative overflow-hidden">
+        {/* Abstract shapes for background */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-rose-500 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-500 rounded-full blur-[150px]"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 py-20 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
             
-            {/* Branding Column */}
-            <div className="lg:col-span-4 space-y-6">
+            {/* Brand Section */}
+            <div className="lg:col-span-4 space-y-8">
               <div className="flex items-center cursor-pointer" onClick={() => onChangeView('home')}>
-                <div className="bg-rose-500 p-2 rounded-full">
-                  <Heart className="h-5 w-5 text-white fill-current" />
+                <div className="bg-rose-600 p-2.5 rounded-2xl shadow-lg shadow-rose-900/20">
+                  <Heart className="h-6 w-6 text-white fill-current" />
                 </div>
-                <span className="ml-3 text-2xl font-serif font-bold text-white tracking-tight">
+                <span className="ml-4 text-3xl font-serif font-bold text-white tracking-tight">
                   Amour<span className="text-rose-500">.</span>
                 </span>
               </div>
-              <p className="text-slate-400 leading-relaxed max-w-sm">
-                The world's premier digital sanctuary for intentional connection. Curating high-fidelity wisdom and expert AI guidance to help you master the art of relationships.
+              <p className="text-slate-400 text-lg leading-relaxed max-w-sm">
+                The premier digital sanctuary for intentional human connection. Curating deep wisdom and expert AI guidance to help you navigate the landscape of love.
               </p>
-              <div className="flex space-x-4 pt-4">
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition-all"><Twitter size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition-all"><Instagram size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition-all"><Youtube size={18} /></a>
+              <div className="flex items-center space-x-5">
+                <button className="p-3 bg-slate-900 rounded-xl hover:bg-rose-600 transition-all group shadow-xl">
+                  <Instagram size={20} className="text-slate-400 group-hover:text-white" />
+                </button>
+                <button className="p-3 bg-slate-900 rounded-xl hover:bg-rose-600 transition-all group shadow-xl">
+                  <Twitter size={20} className="text-slate-400 group-hover:text-white" />
+                </button>
+                <button className="p-3 bg-slate-900 rounded-xl hover:bg-rose-600 transition-all group shadow-xl">
+                  <Linkedin size={20} className="text-slate-400 group-hover:text-white" />
+                </button>
+                <button className="p-3 bg-slate-900 rounded-xl hover:bg-rose-600 transition-all group shadow-xl">
+                  <Youtube size={20} className="text-slate-400 group-hover:text-white" />
+                </button>
               </div>
             </div>
 
-            {/* Links Columns */}
-            <div className="lg:col-span-2 space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Content</h4>
-              <ul className="space-y-3 text-sm">
-                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Directory</button></li>
-                <li><button onClick={() => onChangeView('video-hub')} className="hover:text-rose-400 transition-colors">Masterclass Vault</button></li>
-                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Premium Courses</button></li>
-                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Listen & Learn</button></li>
+            {/* Quick Links */}
+            <div className="lg:col-span-2 space-y-8">
+              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-white">Discovery</h4>
+              <ul className="space-y-4 text-base">
+                <li><button onClick={() => onChangeView('home')} className="text-slate-400 hover:text-rose-400 transition-all">Content Directory</button></li>
+                <li><button onClick={() => onChangeView('toolkit')} className="text-slate-400 hover:text-rose-400 transition-all">Healing Toolkit</button></li>
+                <li><button onClick={() => onChangeView('video-hub')} className="text-slate-400 hover:text-rose-400 transition-all">Video Library</button></li>
               </ul>
             </div>
 
-            <div className="lg:col-span-2 space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Tools</h4>
-              <ul className="space-y-3 text-sm">
-                <li><button onClick={() => onChangeView('toolkit')} className="hover:text-rose-400 transition-colors">Healing Tracker</button></li>
-                <li><button onClick={() => onChangeView('astrology')} className="hover:text-rose-400 transition-colors">Astro-Council</button></li>
-                <li><button onClick={() => onChangeView('agents')} className="hover:text-rose-400 transition-colors">Expert Network</button></li>
-                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Soulmate Sketch</button></li>
+            {/* Expert Council Links */}
+            <div className="lg:col-span-2 space-y-8">
+              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-white">Guidance</h4>
+              <ul className="space-y-4 text-base">
+                <li><button onClick={() => onChangeView('astrology')} className="text-slate-400 hover:text-rose-400 transition-all">Astro Council</button></li>
+                <li><button onClick={() => onChangeView('agents')} className="text-slate-400 hover:text-rose-400 transition-all">Expert Consults</button></li>
+                <li><button onClick={() => onChangeView('token-store')} className="text-slate-400 hover:text-amber-400 transition-all flex items-center"><Zap size={14} className="mr-2 fill-current text-amber-500" /> Buy Tokens</button></li>
               </ul>
             </div>
 
-            {/* Newsletter Column */}
-            <div className="lg:col-span-4 space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Stay Inspired</h4>
-              <p className="text-slate-400 text-sm">Join 15,000+ others receiving our weekly dispatch on love and consciousness.</p>
-              
-              <form onSubmit={handleSubscribe} className="relative">
-                <div className={`absolute inset-0 bg-rose-500/20 blur-xl rounded-full transition-opacity duration-1000 ${subscribed ? 'opacity-100' : 'opacity-0'}`}></div>
-                <div className="relative flex items-center bg-slate-800 rounded-full p-1 border border-slate-700 focus-within:border-rose-500/50 transition-all">
-                  <Mail className="ml-4 text-slate-500" size={18} />
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email" 
-                    className="flex-grow bg-transparent border-none outline-none px-4 py-2.5 text-sm text-white placeholder-slate-500"
-                    disabled={subscribed}
-                  />
-                  <button 
-                    type="submit"
-                    disabled={subscribed}
-                    className={`px-6 py-2.5 rounded-full font-bold text-xs transition-all flex items-center space-x-2 ${subscribed ? 'bg-emerald-500 text-white' : 'bg-rose-600 text-white hover:bg-rose-500'}`}
-                  >
-                    {subscribed ? (
-                      <>
-                        <Sparkles size={14} />
-                        <span>Subscribed!</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Join</span>
-                        <Send size={14} />
-                      </>
-                    )}
-                  </button>
-                </div>
+            {/* Newsletter Section */}
+            <div className="lg:col-span-4 space-y-8">
+              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-white">The Love Note</h4>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Join 50,000+ readers who receive our weekly curation of connection science and soul-level insights.
+              </p>
+              <form onSubmit={handleSubscribe} className="relative group">
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com" 
+                  className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-all"
+                  required
+                />
+                <button 
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-all shadow-lg"
+                >
+                  <Send size={18} />
+                </button>
               </form>
+              <AnimatePresence>
+                {subscribed && (
+                  <motion.p 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-xs text-rose-400 font-bold"
+                  >
+                    Welcome to the inner circle. Check your inbox.
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
-          <div className="mt-20 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              <Sparkles size={12} className="text-rose-500" />
-              <span>&copy; 2024 Amour Directory. All rights reserved.</span>
-            </div>
-            <div className="flex space-x-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+          {/* Bottom Bar */}
+          <div className="mt-20 pt-10 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-slate-500 text-xs font-medium">
+              &copy; {new Date().getFullYear()} Amour Directory. All rights reserved.
+            </p>
+            <div className="flex items-center space-x-8 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <button className="hover:text-rose-500 transition-colors">Privacy Paradigm</button>
+              <button className="hover:text-rose-500 transition-colors">Terms of Union</button>
+              <button className="hover:text-rose-500 transition-colors">Safety Center</button>
             </div>
           </div>
         </div>

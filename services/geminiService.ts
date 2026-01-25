@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ContentType, Post, Agent } from '../types';
+import { ContentType, Post, Agent, SEOMetadata } from '../types';
 
 /**
  * Lazy initializer for the Google GenAI client.
@@ -27,6 +27,43 @@ const handleGeminiError = (error: any): string => {
         return "ERROR: Quota Exceeded. Please try again in a minute or check your billing status in Google AI Studio.";
     }
     return `ERROR: ${message}`;
+};
+
+export const generateSEOMetadata = async (title: string, subtitle: string, type: string, content?: string): Promise<SEOMetadata | null> => {
+    try {
+        const ai = getAI();
+        const prompt = `You are an SEO expert. Create a high-converting meta title and description for a ${type}.
+        Title: ${title}
+        Sub: ${subtitle}
+        ${content ? `Content Sample: ${content.substring(0, 1000)}` : ''}
+        
+        Requirements:
+        - metaTitle: 50-60 chars, catchy, includes primary keywords.
+        - metaDescription: 140-160 chars, includes a call to action, describes value.
+        - focusKeywords: Comma separated list of 3-5 keywords.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        metaTitle: { type: Type.STRING },
+                        metaDescription: { type: Type.STRING },
+                        focusKeywords: { type: Type.STRING }
+                    },
+                    required: ['metaTitle', 'metaDescription', 'focusKeywords']
+                }
+            }
+        });
+
+        return JSON.parse(cleanJsonString(response.text || '{}'));
+    } catch (error) {
+        console.error("SEO Generation failed:", error);
+        return null;
+    }
 };
 
 export const generateSoulmateSketch = async (data: any): Promise<string | null> => {
@@ -340,6 +377,11 @@ export const getAgentChatResponse = async (agent: Agent, userMessage: string, hi
         const siteConstraint = agent.tools.targetWebsites.map(s => `site:${s}`).join(' OR ');
         systemInstruction += `\n\n[KNOWLEDGE SOURCE CONSTRAINT]: You have access to a web search tool. For the most accurate and on-brand information, you MUST prioritize and emphasize data from the following websites: ${agent.tools.targetWebsites.join(', ')}. If relevant, focus your internal queries using constraints like "${siteConstraint}".`;
       }
+    }
+
+    if (agent.tools?.codeExecution) {
+        tools.push({ code_execution: {} });
+        systemInstruction += `\n\n[CAPABILITY]: You have native access to a Python code execution sandbox. Use it to perform complex calculations, simulations, or logic checks relevant to the user's needs.`;
     }
 
     if (agent.tools?.googleDriveEnabled && agent.tools?.googleDriveLinks && agent.tools?.googleDriveLinks.length > 0) {

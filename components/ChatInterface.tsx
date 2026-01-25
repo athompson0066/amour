@@ -1,8 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Agent } from '../types';
-import { Send, ArrowLeft, MoreVertical, Phone, Video, Loader2, Globe, Eye, Brain, Search, Database } from 'lucide-react';
+import { Agent, User } from '../types';
+import { Send, ArrowLeft, MoreVertical, Phone, Video, Loader2, Globe, Eye, Brain, Search, Database, Zap, AlertCircle } from 'lucide-react';
 import { getAgentChatResponse } from '../services/geminiService';
+import { getCurrentUser, updateUser } from '../services/authService';
 
 interface ChatInterfaceProps {
   agent: Agent;
@@ -17,6 +18,7 @@ interface Message {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -27,7 +29,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getCurrentUser().then(setUser);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,7 +46,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
+    if (!user || user.tokens < agent.tokenCost) {
+        setError(`Insufficient tokens. This session costs ${agent.tokenCost} tokens per message.`);
+        return;
+    }
 
+    setError(null);
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -67,6 +79,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
       };
 
       setMessages(prev => [...prev, agentResponse]);
+      
+      // Deduct Tokens
+      const updatedUser = { ...user, tokens: user.tokens - agent.tokenCost };
+      await updateUser(updatedUser);
+      setUser(updatedUser);
+
     } catch (error) {
       console.error("Failed to send message", error);
     } finally {
@@ -83,7 +101,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50">
-      {/* Chat Header */}
       <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-sm">
         <div className="flex items-center">
           <button onClick={onBack} className="mr-3 text-slate-500 hover:text-slate-800 p-1 rounded-full hover:bg-slate-100">
@@ -96,27 +113,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
             )}
           </div>
           <div className="ml-3">
+            <h3 className="font-bold text-slate-900 text-sm">{agent.name}</h3>
             <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-slate-900 text-sm">{agent.name}</h3>
-                <div className="flex items-center space-x-1">
-                    {agent.tools?.googleSearch && <Globe size={10} className="text-rose-500" title="Web Grounding Enabled" />}
-                    {agent.tools?.webScraping && <Search size={10} className="text-emerald-500" title="Web Scraping Active" />}
-                    {agent.tools?.googleDriveEnabled && <Database size={10} className="text-amber-500" title="Knowledge Base Active" />}
-                    {agent.tools?.vision && <Eye size={10} className="text-blue-500" title="Vision Analysis Enabled" />}
-                    {agent.thinkingBudget && agent.thinkingBudget > 0 ? <Brain size={10} className="text-purple-500" title="Advanced Reasoning Active" /> : null}
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{agent.role}</p>
+                <div className="flex items-center bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-100">
+                    <Zap size={8} className="text-amber-500 fill-current mr-1" />
+                    <span className="text-[8px] font-black text-amber-700 uppercase tracking-tighter">{agent.tokenCost} / Msg</span>
                 </div>
             </div>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{agent.role}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2 text-slate-400">
-           <button className="p-2 hover:bg-slate-100 rounded-full"><Phone size={18} /></button>
-           <button className="p-2 hover:bg-slate-100 rounded-full"><Video size={18} /></button>
-           <button className="p-2 hover:bg-slate-100 rounded-full"><MoreVertical size={18} /></button>
+        <div className="flex items-center space-x-4">
+           <div className="hidden sm:flex flex-col items-end">
+               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Available</span>
+               <span className="text-xs font-bold text-slate-700">{user?.tokens || 0} Tokens</span>
+           </div>
+           <button className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><MoreVertical size={18} /></button>
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
@@ -139,39 +154,41 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ agent, onBack }) => {
         {isTyping && (
            <div className="flex justify-start">
              <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center space-x-1">
-               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+               <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+               <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+               <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
              </div>
            </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
+      {error && (
+        <div className="px-4 py-2 bg-amber-50 border-t border-amber-100 flex items-center text-amber-700 text-xs font-bold justify-center space-x-2">
+            <AlertCircle size={14} />
+            <span>{error}</span>
+            <button onClick={onBack} className="underline text-amber-800 ml-2">Recharge Now</button>
+        </div>
+      )}
+
       <div className="bg-white border-t border-slate-200 p-4">
         <div className="max-w-4xl mx-auto flex items-end space-x-2 bg-slate-100 rounded-3xl p-2 border border-slate-200 focus-within:border-rose-300 focus-within:ring-2 focus-within:ring-rose-100 transition-all">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder={`Message ${agent.name}...`}
+            placeholder={`Ask ${agent.name.split(' ')[0]} for advice...`}
             className="flex-1 bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 resize-none max-h-32 py-3 px-4"
             rows={1}
             style={{ minHeight: '44px' }}
           />
           <button 
             onClick={handleSend}
-            disabled={!inputText.trim() || isTyping}
-            className="p-3 bg-rose-600 text-white rounded-full hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+            disabled={!inputText.trim() || isTyping || (user ? user.tokens < agent.tokenCost : true)}
+            className="p-3 bg-rose-600 text-white rounded-full hover:bg-rose-700 disabled:opacity-30 transition-colors shadow-md flex items-center justify-center min-w-[48px]"
           >
             {isTyping ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
           </button>
-        </div>
-        <div className="text-center mt-2">
-           <p className="text-xs text-slate-400">
-             <span className="font-semibold text-rose-500">{agent.price}</span> applies per response. By chatting, you agree to our Terms.
-           </p>
         </div>
       </div>
     </div>

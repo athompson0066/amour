@@ -15,7 +15,7 @@ const createInitialGuest = (): User => ({
   email: 'guest@amour.local',
   name: 'Guest User',
   avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=guest`,
-  credits: 0,
+  tokens: 10, // Initial free tokens
   purchasedContentIds: JSON.parse(localStorage.getItem('amour_purchased_ids') || '[]'),
   isSubscriber: false
 });
@@ -26,6 +26,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
     const user = JSON.parse(stored);
     // Sync purchased IDs from dedicated key
     user.purchasedContentIds = JSON.parse(localStorage.getItem('amour_purchased_ids') || '[]');
+    if (user.tokens === undefined) user.tokens = 10;
     return user;
   }
   const newUser = createInitialGuest();

@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
-import { Clock, Lock, BookOpen, Mic, Link as LinkIcon, Check } from 'lucide-react';
+import { Clock, Lock, BookOpen, Mic, Link as LinkIcon, Check, Globe, LayoutGrid, List as ListIcon, ArrowRight } from 'lucide-react';
 import { Post } from '../types';
 
 interface ArticleCardProps {
   post: Post;
   onClick: (post: Post) => void;
+  viewMode?: 'grid' | 'list';
 }
 
-const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
+const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick, viewMode = 'grid' }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLink = (e: React.MouseEvent) => {
@@ -23,24 +24,76 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
     switch (post.type) {
       case 'course': return <BookOpen size={14} className="mr-1" />;
       case 'podcast': return <Mic size={14} className="mr-1" />;
+      case 'website': return <Globe size={14} className="mr-1" />;
       default: return null;
     }
   };
 
-  const getShadowColor = () => {
+  const getThemeColors = () => {
       switch(post.type) {
-          case 'course': return 'group-hover:shadow-indigo-300/40 border-indigo-100';
-          case 'podcast': return 'group-hover:shadow-purple-300/40 border-purple-100';
-          default: return 'group-hover:shadow-rose-300/40 border-rose-100';
+          case 'course': return { shadow: 'group-hover:shadow-indigo-300/40', border: 'border-indigo-100', text: 'text-indigo-600', bg: 'bg-indigo-50' };
+          case 'podcast': return { shadow: 'group-hover:shadow-purple-300/40', border: 'border-purple-100', text: 'text-purple-600', bg: 'bg-purple-50' };
+          case 'website': return { shadow: 'group-hover:shadow-emerald-300/40', border: 'border-emerald-100', text: 'text-emerald-600', bg: 'bg-emerald-50' };
+          default: return { shadow: 'group-hover:shadow-rose-300/40', border: 'border-rose-100', text: 'text-rose-600', bg: 'bg-rose-50' };
       }
+  };
+
+  const theme = getThemeColors();
+
+  if (viewMode === 'list') {
+      return (
+          <div 
+            onClick={() => onClick(post)}
+            className={`group flex flex-col md:flex-row bg-white/80 backdrop-blur-sm rounded-[2rem] border border-white/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden cursor-pointer`}
+          >
+              <div className="md:w-64 h-48 md:h-full relative overflow-hidden flex-shrink-0">
+                  <img src={post.coverImage} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" alt={post.title} />
+                  <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/0 transition-colors" />
+                  <div className="absolute top-4 left-4 z-10">
+                       <div className="glass text-slate-800 text-[10px] font-black px-3 py-1.5 rounded-full flex items-center shadow-sm uppercase tracking-widest border border-white/80">
+                        {getTypeIcon()} {post.type}
+                      </div>
+                  </div>
+              </div>
+              <div className="p-8 flex flex-col justify-center flex-grow">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                      {post.tags.slice(0, 3).map(tag => (
+                          <span key={tag} className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${theme.bg} ${theme.text} border border-transparent group-hover:border-current transition-colors`}>
+                              {tag}
+                          </span>
+                      ))}
+                      {post.isPremium && <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Premium</span>}
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold text-slate-900 mb-3 group-hover:text-rose-600 transition-colors leading-tight">{post.title}</h3>
+                  <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 md:line-clamp-2">
+                      {post.subtitle}
+                  </p>
+                  <div className="flex items-center justify-between mt-auto">
+                      <div className="flex items-center space-x-4">
+                          <div className="flex items-center">
+                              <img src={post.author.avatar} className="w-6 h-6 rounded-full border border-white shadow-sm mr-2" alt={post.author.name} />
+                              <span className="text-xs font-bold text-slate-600">{post.author.name}</span>
+                          </div>
+                          <div className="flex items-center text-xs text-slate-400 font-medium">
+                              <Clock size={12} className="mr-1.5" />
+                              {post.readTime}
+                          </div>
+                      </div>
+                      <button className={`flex items-center space-x-2 text-xs font-black uppercase tracking-widest ${theme.text} opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0`}>
+                          <span>Explore {post.type === 'podcast' ? 'Episode' : 'Content'}</span>
+                          <ArrowRight size={14} />
+                      </button>
+                  </div>
+              </div>
+          </div>
+      );
   }
 
   return (
     <div 
-      className={`group relative bg-white/80 backdrop-blur-sm rounded-3xl transition-all duration-500 cursor-pointer h-full flex flex-col hover:-translate-y-2 hover:shadow-2xl ${getShadowColor()} shadow-sm border border-white/50`}
+      className={`group relative bg-white/80 backdrop-blur-sm rounded-3xl transition-all duration-500 cursor-pointer h-full flex flex-col hover:-translate-y-2 hover:shadow-2xl ${theme.shadow} shadow-sm border border-white/50`}
       onClick={() => onClick(post)}
     >
-      {/* Image Container */}
       <div className="relative aspect-[16/10] overflow-hidden rounded-t-3xl p-1">
         <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors z-10 rounded-t-[20px]" />
         <img 
@@ -49,7 +102,6 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
           className="w-full h-full object-cover rounded-t-[20px] transform group-hover:scale-105 transition-transform duration-700 ease-out"
         />
         
-        {/* Floating Badges */}
         <div className="absolute top-4 right-4 z-20 flex space-x-2">
             <button 
                 onClick={handleCopyLink}
@@ -73,13 +125,12 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick }) => {
         </div>
       </div>
       
-      {/* Content */}
       <div className="p-6 flex flex-col flex-grow relative">
         <div className="flex-grow">
           <h3 className="text-xl font-serif font-bold text-slate-900 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-rose-600 group-hover:to-purple-600 transition-all leading-tight mb-3">
             {post.title}
           </h3>
-          <p className="text-slate-500 text-sm line-clamp-2 mb-6 font-light leading-relaxed group-hover:text-slate-600">
+          <p className="text-slate-500 text-sm line-clamp-3 mb-6 font-light leading-relaxed group-hover:text-slate-600">
             {post.subtitle}
           </p>
         </div>

@@ -40,7 +40,7 @@ const AdminPriceStrategy: React.FC<AdminPriceStrategyProps> = ({ onBack, onRefre
         if (!item.id) return false;
         // Fix for type narrowing: Use 'type' property unique to Post to prevent non-overlapping cast errors
         if ('type' in item) return item.isPremium;
-        return (item as unknown as Agent).priceValue && (item as unknown as Agent).priceValue > 0;
+        return item.priceValue && item.priceValue > 0;
     });
     setItems(monetized);
   };
@@ -249,8 +249,8 @@ const AdminPriceStrategy: React.FC<AdminPriceStrategyProps> = ({ onBack, onRefre
                                 <tbody className="divide-y divide-slate-50">
                                     {proposals.map(proposal => {
                                         const item = items.find(i => i.id === proposal.id);
-                                        // Fix for Error 153: Correctly identify Agent vs Post using 'priceValue' or 'type' check before casting
-                                        const currentPriceValue = item ? ('priceValue' in item ? (item as unknown as Agent).priceValue : (item as Post).price) : 0;
+                                        // Standardize price retrieval: priceValue for Agent, price for Post
+                                        const currentPriceValue = item ? ('type' in item ? (item as Post).price : (item as Agent).priceValue) : 0;
                                         
                                         // Use safe numeric conversion to ensure .toFixed() never fails with NaN
                                         const currentPrice = safeParsePrice(currentPriceValue);

@@ -9,7 +9,15 @@ export type ContentType =
   | 'guide' 
   | 'tutorial' 
   | 'ebook'
-  | 'sketch';
+  | 'sketch'
+  | 'website';
+
+export interface SEOMetadata {
+  metaTitle: string;
+  metaDescription: string;
+  focusKeywords: string;
+  altText?: string;
+}
 
 export interface QuizQuestion {
   question: string;
@@ -25,11 +33,11 @@ export interface ContentBlock {
     url?: string;
     caption?: string;
     level?: 'h2' | 'h3';
-    agentId?: string; // Reference to an expert ID
-    videoId?: string; // YouTube video ID for video blocks
-    questions?: QuizQuestion[]; // For quiz blocks
-    html?: string; // For embed blocks (Spotify, etc)
-    fileName?: string; // For PDF blocks
+    agentId?: string; 
+    videoId?: string; 
+    questions?: QuizQuestion[]; 
+    html?: string; 
+    fileName?: string; 
     audioTitle?: string;
     voiceName?: string;
     bgMusicTrack?: string;
@@ -52,14 +60,15 @@ export interface Post {
   coverImage: string;
   author: Author;
   publishedAt: string;
-  readTime: string; // e.g., "5 min read" or "2h Course"
+  readTime: string; 
   isPremium: boolean;
-  price?: number; // if course or premium article
-  payhipProductUrl?: string; // Payhip direct link or product code
-  unlockPassword?: string; // Secret key to unlock after purchase
+  price?: number; 
+  payhipProductUrl?: string; 
+  unlockPassword?: string; 
   tags: string[];
   blocks: ContentBlock[];
-  relatedVideos?: VideoItem[]; // Added for YouTube integration
+  relatedVideos?: VideoItem[]; 
+  seo?: SEOMetadata;
 }
 
 export interface AgentTools {
@@ -76,19 +85,21 @@ export interface Agent {
   id: string;
   name: string;
   role: string;
-  category: 'relationship' | 'astro'; // New: Determines which council the agent belongs to
+  category: 'relationship' | 'astro'; 
   avatar: string;
   description: string;
   systemInstruction?: string; 
   embedCode?: string; 
-  price: string; 
-  priceValue?: number; 
+  tokenCost: number; // Replaced price string with token numeric cost
+  price?: string; // For display/Payhip
+  priceValue?: number; // For numeric pricing logic
   payhipProductUrl?: string; 
-  unlockPassword?: string; // Secret key to unlock after purchase
+  unlockPassword?: string; 
   isOnline: boolean;
   expertise: string[];
   tools?: AgentTools;
   thinkingBudget?: number; 
+  seo?: SEOMetadata;
 }
 
 export interface User {
@@ -96,7 +107,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  credits: number; 
+  tokens: number; // Added token balance
   purchasedContentIds: string[]; 
   isSubscriber: boolean; 
 }

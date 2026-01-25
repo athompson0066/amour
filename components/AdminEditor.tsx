@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown, Key, CircleDollarSign } from 'lucide-react';
-import { Post, ContentBlock, ContentType, Agent, VideoItem, QuizQuestion } from '../types';
+import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown, Key, CircleDollarSign, Globe, Info } from 'lucide-react';
+import { Post, ContentBlock, ContentType, Agent, VideoItem, QuizQuestion, SEOMetadata } from '../types';
 import { savePost, getAgents, getAstroAgents } from '../services/storage';
-import { generateBlogOutline, generateCourseStructure } from '../services/geminiService';
+import { generateBlogOutline, generateCourseStructure, generateSEOMetadata } from '../services/geminiService';
 import { fetchVideos } from '../services/youtubeService';
 
 interface AdminEditorProps {
@@ -28,18 +28,45 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const [isSaving, setIsSaving] = useState(false);
   const [tags, setTags] = useState(initialPost?.tags.join(', ') || '');
   
+  // SEO States
+  const [seo, setSeo] = useState<SEOMetadata>(initialPost?.seo || {
+      metaTitle: '',
+      metaDescription: '',
+      focusKeywords: '',
+      altText: ''
+  });
+  const [isGeneratingSEO, setIsGeneratingSEO] = useState(false);
+
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseTopic, setCourseTopic] = useState('');
   const [courseAudience, setCourseAudience] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
   useEffect(() => {
     const agents = [...getAgents(), ...getAstroAgents()];
     setAvailableAgents(agents);
   }, []);
+
+  const handleMagicSEO = async () => {
+      if (!title) return alert("Add a title first.");
+      setIsGeneratingSEO(true);
+      try {
+          const contentStr = blocks.filter(b => b.type === 'text').map(b => b.content).join(' ');
+          const data = await generateSEOMetadata(title, subtitle, type, contentStr);
+          if (data) {
+              setSeo({
+                  ...seo,
+                  metaTitle: data.metaTitle,
+                  metaDescription: data.metaDescription,
+                  focusKeywords: data.focusKeywords
+              });
+          }
+      } catch (e) {} finally {
+          setIsGeneratingSEO(false);
+      }
+  };
 
   const addBlock = (type: ContentBlock['type'], content: string = '', meta: any = {}) => {
     const newBlock: ContentBlock = {
@@ -62,7 +89,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const moveBlock = (index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index === 0) return;
     if (direction === 'down' && index === blocks.length - 1) return;
-
     const newBlocks = [...blocks];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
@@ -73,11 +99,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
     const block = blocks.find(b => b.id === blockId);
     if (!block || !block.meta) return;
     const questions = [...(block.meta.questions || [])];
-    questions.push({
-        question: "New Question",
-        options: ["Option 1", "Option 2"],
-        correctAnswerIndex: 0
-    });
+    questions.push({ question: "New Question", options: ["Option 1", "Option 2"], correctAnswerIndex: 0 });
     updateBlock(blockId, block.content, { questions });
   };
 
@@ -97,7 +119,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   };
 
   const handleMagicFetchVideos = async () => {
-      if (!title) return alert("Enter a title first so we know what to search for.");
+      if (!title) return alert("Enter a title first.");
       setIsFetchingVideos(true);
       try {
           const results = await fetchVideos(title);
@@ -116,10 +138,8 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const handleGenerateCourse = async () => {
     if (!courseTopic) return;
     setIsGenerating(true);
-    setGenerationError(null);
     try {
         const data = await generateCourseStructure(courseTopic, courseAudience || 'general audience', courseDescription);
-        
         if (data) {
             setTitle(data.title || courseTopic);
             setSubtitle(data.subtitle || '');
@@ -127,7 +147,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
             setType('course');
             setIsPremium(true);
             if (data.price) setPrice(data.price);
-            
             if (data.blocks && Array.isArray(data.blocks)) {
                  const newBlocks = data.blocks.map((b: any) => ({
                     id: Math.random().toString(36).substr(2, 9),
@@ -138,12 +157,9 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                 setBlocks(newBlocks);
             }
             setShowCourseModal(false);
-        } else {
-            setGenerationError("Failed to generate course.");
         }
     } catch (e) {
         console.error(e);
-        setGenerationError("An unexpected error occurred.");
     } finally {
         setIsGenerating(false);
     }
@@ -156,15 +172,11 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
   const handleSave = async () => {
     if (!title) return alert("Title is required");
-    
     setIsSaving(true);
     try {
         const newPost: Post = {
           id: initialPost?.id || Math.random().toString(36).substr(2, 9),
-          title,
-          subtitle,
-          type,
-          coverImage,
+          title, subtitle, type, coverImage,
           author: initialPost?.author || {
             id: 'admin',
             name: 'Admin Editor',
@@ -179,14 +191,13 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           unlockPassword: isPremium ? unlockPassword : undefined,
           tags: tags.split(',').map(t => t.trim()).filter(t => t),
           blocks,
-          relatedVideos: relatedVideos.length > 0 ? relatedVideos : undefined
+          relatedVideos: relatedVideos.length > 0 ? relatedVideos : undefined,
+          seo: (seo.metaTitle || seo.metaDescription) ? seo : undefined
         };
-        
         await savePost(newPost);
         onSave();
     } catch (error) {
         console.error("Save failed:", error);
-        alert("Failed to save post.");
     } finally {
         setIsSaving(false);
     }
@@ -236,12 +247,8 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                   </div>
                   <div className="max-h-96 overflow-y-auto p-4 space-y-2">
                       {availableAgents.map(agent => (
-                          <button 
-                            key={agent.id} 
-                            onClick={() => handleEmbedAgent(agent)}
-                            className="w-full flex items-center p-4 hover:bg-rose-50 rounded-2xl transition-all border border-transparent hover:border-rose-100 group"
-                          >
-                              <img src={agent.avatar} className="w-12 h-12 rounded-full object-cover mr-4 shadow-sm border-2 border-white group-hover:scale-105 transition-transform" />
+                          <button key={agent.id} onClick={() => handleEmbedAgent(agent)} className="w-full flex items-center p-4 hover:bg-rose-50 rounded-2xl transition-all border border-transparent hover:border-rose-100 group">
+                              <img src={agent.avatar} className="w-12 h-12 rounded-full object-cover mr-4 shadow-sm border-2 border-white" />
                               <div className="text-left">
                                   <div className="font-bold text-sm text-slate-900">{agent.name}</div>
                                   <div className="text-[10px] text-rose-500 uppercase font-black tracking-widest">{agent.role}</div>
@@ -265,13 +272,9 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           </button>
           <div className="w-px h-6 bg-slate-200 mx-2" />
           <button onClick={onCancel} className="px-5 py-2.5 text-slate-500 hover:text-slate-700 font-bold text-sm">Cancel</button>
-          <button 
-            onClick={handleSave} 
-            disabled={isSaving}
-            className="px-8 py-2.5 bg-slate-900 text-white rounded-full hover:bg-slate-800 shadow-xl shadow-slate-900/10 flex items-center font-bold disabled:opacity-70 transition-all active:scale-95"
-          >
+          <button onClick={handleSave} disabled={isSaving} className="px-8 py-2.5 bg-slate-900 text-white rounded-full hover:bg-slate-800 shadow-xl flex items-center font-bold disabled:opacity-70 transition-all active:scale-95">
             {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
-            Publish to Directory
+            Publish
           </button>
         </div>
       </div>
@@ -279,33 +282,20 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
       <div className="max-w-6xl mx-auto mt-8 px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 space-y-8">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                <div className="space-y-6">
-                    <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Post Foundation</label>
-                        <input 
-                            type="text" 
-                            value={title} 
-                            onChange={(e) => setTitle(e.target.value)} 
-                            placeholder="Enter a captivating title..."
-                            className="w-full px-0 border-none focus:ring-0 text-4xl font-serif font-bold text-slate-900 placeholder-slate-200" 
-                        />
-                        <textarea 
-                            value={subtitle} 
-                            onChange={(e) => setSubtitle(e.target.value)} 
-                            placeholder="Add an enticing subtitle that hooks the reader..."
-                            className="w-full px-0 border-none focus:ring-0 text-xl text-slate-500 h-24 resize-none placeholder-slate-200 font-light" 
-                        />
-                    </div>
+                <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Post Foundation</label>
+                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter a captivating title..." className="w-full px-0 border-none focus:ring-0 text-4xl font-serif font-bold text-slate-900 placeholder-slate-200" />
+                    <textarea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Add an enticing subtitle..." className="w-full px-0 border-none focus:ring-0 text-xl text-slate-500 h-24 resize-none placeholder-slate-200 font-light" />
                 </div>
             </div>
 
             <div className="space-y-4">
                 {blocks.map((block, index) => (
-                    <div key={block.id} className="group relative bg-white p-6 rounded-3xl border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-900/5 transition-all duration-300">
+                    <div key={block.id} className="group relative bg-white p-6 rounded-3xl border border-slate-100 hover:border-rose-200 hover:shadow-xl transition-all duration-300">
                         <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 flex items-center space-x-1 z-10 scale-90 origin-top-right">
                             <div className="flex flex-col space-y-1 mr-1">
-                                <button onClick={() => moveBlock(index, 'up')} disabled={index === 0} className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronUp size={14}/></button>
-                                <button onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1} className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronDown size={14}/></button>
+                                <button onClick={() => moveBlock(index, 'up')} disabled={index === 0} className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30"><ChevronUp size={14}/></button>
+                                <button onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1} className="p-1.5 bg-white shadow-lg text-slate-400 hover:text-indigo-600 rounded-full transition-colors border border-slate-100 disabled:opacity-30"><ChevronDown size={14}/></button>
                             </div>
                             <button onClick={() => removeBlock(block.id)} className="p-2.5 bg-white shadow-lg text-slate-400 hover:text-red-500 rounded-full transition-colors border border-slate-100"><Trash2 size={16}/></button>
                         </div>
@@ -383,6 +373,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                             <option value="article">Article</option>
                             <option value="course">Course</option>
                             <option value="podcast">Podcast</option>
+                            <option value="website">Website</option>
                             <option value="ebook">Ebook</option>
                             <option value="guide">Guide</option>
                         </select>
@@ -419,6 +410,75 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                     </div>
                     <div><label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Cover Visual URL</label><input type="text" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none" />{coverImage && <img src={coverImage} className="mt-4 rounded-2xl aspect-video object-cover shadow-sm" />}</div>
                     <div><label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Search Tags</label><input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="trust, healing, growth..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" /></div>
+                </div>
+            </div>
+
+            {/* SEO Optimization Card */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center"><Globe className="mr-2 text-indigo-500" size={14} />Search Visibility</h3>
+                    <button 
+                        onClick={handleMagicSEO} 
+                        disabled={isGeneratingSEO || !title}
+                        className="text-[10px] font-black text-indigo-500 hover:text-indigo-600 uppercase tracking-widest flex items-center group disabled:opacity-50"
+                    >
+                        {isGeneratingSEO ? <Loader2 size={12} className="animate-spin mr-1" /> : <Sparkles size={12} className="mr-1 group-hover:animate-pulse" />}
+                        Magic SEO
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase mb-2">
+                            <span>SEO Meta Title</span>
+                            <span className={`${seo.metaTitle.length > 60 ? 'text-rose-500' : 'text-slate-400'}`}>{seo.metaTitle.length}/60</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            value={seo.metaTitle} 
+                            onChange={(e) => setSeo({...seo, metaTitle: e.target.value})} 
+                            placeholder={title || "Title for search engines..."}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 transition-all" 
+                        />
+                    </div>
+                    <div>
+                        <label className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase mb-2">
+                            <span>Meta Description</span>
+                            <span className={`${seo.metaDescription.length > 160 ? 'text-rose-500' : 'text-slate-400'}`}>{seo.metaDescription.length}/160</span>
+                        </label>
+                        <textarea 
+                            value={seo.metaDescription} 
+                            onChange={(e) => setSeo({...seo, metaDescription: e.target.value})} 
+                            placeholder={subtitle || "Description for search result snippets..."}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 transition-all h-20 resize-none" 
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Focus Keywords</label>
+                        <input 
+                            type="text" 
+                            value={seo.focusKeywords} 
+                            onChange={(e) => setSeo({...seo, focusKeywords: e.target.value})} 
+                            placeholder="keyword1, keyword2..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-400 transition-all" 
+                        />
+                    </div>
+
+                    {/* Google Snippet Preview */}
+                    <div className="mt-6 pt-6 border-t border-slate-100">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3 flex items-center"><Search size={10} className="mr-1" /> Google Snippet Preview</label>
+                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm font-sans">
+                            <div className="text-[14px] text-[#1a0dab] hover:underline cursor-pointer truncate mb-1">
+                                {seo.metaTitle || title || "New Content - Amour Directory"}
+                            </div>
+                            <div className="text-[12px] text-[#006621] truncate mb-1">
+                                amour.love/directory/{type}/{title.toLowerCase().replace(/\s+/g, '-')}
+                            </div>
+                            <div className="text-[13px] text-[#545454] line-clamp-2 leading-relaxed">
+                                {seo.metaDescription || subtitle || "Discover premium guidance and expert stories in the Amour relationship directory..."}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
