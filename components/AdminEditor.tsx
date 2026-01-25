@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown, Key } from 'lucide-react';
+import { Plus, Image, Type, Save, X, Trash2, Layout, DollarSign, Sparkles, BookOpen, AlertCircle, Loader2, UserCheck, ExternalLink, Youtube, Search, Video, RefreshCw, PlayCircle, ChevronUp, ChevronDown, CheckCircle2, ListChecks, Code, FileDown, Key, CircleDollarSign } from 'lucide-react';
 import { Post, ContentBlock, ContentType, Agent, VideoItem, QuizQuestion } from '../types';
 import { savePost, getAgents, getAstroAgents } from '../services/storage';
 import { generateBlogOutline, generateCourseStructure } from '../services/geminiService';
@@ -69,7 +69,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
     setBlocks(newBlocks);
   };
 
-  // Quiz Editor Logic
   const addQuestionToQuiz = (blockId: string) => {
     const block = blocks.find(b => b.id === blockId);
     if (!block || !block.meta) return;
@@ -195,7 +194,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
-      {/* Modals omitted for brevity - assuming they remain the same */}
       {showCourseModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rose-100">
@@ -255,7 +253,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
           </div>
       )}
 
-      {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-16 z-40 px-6 py-4 flex justify-between items-center shadow-sm">
         <h2 className="text-xl font-bold text-slate-700 flex items-center">
             <div className="p-2 bg-rose-50 rounded-lg mr-3"><Layout className="text-rose-500" size={20} /></div>
@@ -280,7 +277,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
       </div>
 
       <div className="max-w-6xl mx-auto mt-8 px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Main Content Area */}
         <div className="lg:col-span-8 space-y-8">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
                 <div className="space-y-6">
@@ -377,7 +373,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
             </div>
         </div>
 
-        {/* Sidebar: Config & Metadata */}
         <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-6 flex items-center"><RefreshCw className="mr-2 text-rose-500" size={14} />Configuration</h3>
@@ -393,24 +388,30 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                         </select>
                     </div>
 
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <label className="flex items-center justify-between cursor-pointer">
-                            <div><span className="block text-xs font-bold text-slate-700">Premium Content</span><span className="text-[10px] text-slate-400 uppercase tracking-widest">Requires Payment</span></div>
-                            <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} className="w-5 h-5 rounded text-rose-600 focus:ring-rose-500 border-slate-300" />
-                        </label>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <CircleDollarSign className="text-amber-500" size={16} />
+                            <label className="flex items-center justify-between cursor-pointer flex-grow">
+                                <div><span className="block text-xs font-bold text-slate-700">Premium Content</span><span className="text-[10px] text-slate-400 uppercase tracking-widest">Requires Payment</span></div>
+                                <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} className="w-5 h-5 rounded text-rose-600 focus:ring-rose-500 border-slate-300" />
+                            </label>
+                        </div>
                         {isPremium && (
-                            <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2">
+                            <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2 pt-4 border-t border-slate-200">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pricing (USD)</label>
                                     <div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} /><input type="number" value={price} onChange={(e) => setPrice(parseFloat(e.target.value))} className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none" /></div>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Payhip Product Link</label>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center">
+                                        <ExternalLink size={10} className="mr-1" />
+                                        Payhip Product Link
+                                    </label>
                                     <input type="text" value={payhipUrl} onChange={(e) => setPayhipUrl(e.target.value)} placeholder="https://payhip.com/b/XXXX" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none" />
                                 </div>
                                 <div className="pt-2 border-t border-slate-200">
                                     <label className="block text-[10px] font-bold text-rose-500 uppercase mb-1 flex items-center"><Key size={10} className="mr-1" /> Access Unlock Password</label>
-                                    <input type="text" value={unlockPassword} onChange={(e) => setUnlockPassword(e.target.value)} placeholder="Secret key for user entry" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-rose-500/20" />
+                                    <input type="text" value={unlockPassword} onChange={(e) => setUnlockPassword(e.target.value)} placeholder="Secret key for user entry" className="w-full px-4 py-2.5 bg-white border border-rose-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-rose-500/20" />
                                     <p className="text-[8px] text-slate-400 mt-1 italic">Provide this key to customers in your Payhip purchase confirmation.</p>
                                 </div>
                             </div>

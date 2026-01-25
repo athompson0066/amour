@@ -10,11 +10,61 @@ const AGENT_EXCLUSIONS_KEY = 'amour_excluded_agents';
 export const DEFAULT_AUTHOR: Author = {
   id: 'a1',
   name: 'Dr. Elena Rose',
-  avatar: 'https://picsum.photos/seed/elena/150/150',
+  avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200',
   bio: 'Relationship Psychologist & Love Coach',
 };
 
 const SEED_DATA: Post[] = [
+  {
+    id: 'course-1',
+    title: 'The Attachment Theory Masterclass',
+    subtitle: 'Identify your secure, anxious, or avoidant style and transform how you connect with others.',
+    type: 'course',
+    coverImage: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800&h=400',
+    author: DEFAULT_AUTHOR,
+    publishedAt: new Date().toISOString(),
+    readTime: '4h Course',
+    isPremium: true,
+    price: 49.99,
+    payhipProductUrl: 'https://payhip.com/b/example',
+    unlockPassword: 'HEAL-ATTACH-2024',
+    tags: ['Psychology', 'Healing', 'Growth'],
+    blocks: [
+      { id: 'b1', type: 'header', content: 'Module 1: Foundations of Attachment' },
+      { id: 'b2', type: 'text', content: 'In this module, we explore the origins of attachment theory and how your early caregivers shaped your adult relationship dynamics.' }
+    ]
+  },
+  {
+    id: 'article-1',
+    title: 'The 7 Languages of Emotional Intimacy',
+    subtitle: 'Beyond just physical touch—how to build a soul-level connection that withstands time.',
+    type: 'article',
+    coverImage: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=800&h=400',
+    author: DEFAULT_AUTHOR,
+    publishedAt: new Date(Date.now() - 86400000).toISOString(),
+    readTime: '12 min read',
+    isPremium: false,
+    tags: ['Intimacy', 'Communication', 'Wisdom'],
+    blocks: [
+      { id: 'a1', type: 'text', content: 'Intimacy is more than just proximity; it is the art of being seen and known in your most vulnerable state.' }
+    ]
+  },
+  {
+    id: 'podcast-1',
+    title: 'Midnight Musings: Healing After Loss',
+    subtitle: 'A raw and unfiltered conversation on navigating the void and reclaiming your identity.',
+    type: 'podcast',
+    coverImage: 'https://images.unsplash.com/photo-1478737270239-2fccd2c78621?auto=format&fit=crop&q=80&w=800&h=400',
+    author: { ...DEFAULT_AUTHOR, name: 'Amour Audio' },
+    publishedAt: new Date(Date.now() - 172800000).toISOString(),
+    readTime: '45 min listen',
+    isPremium: true,
+    price: 9.99,
+    payhipProductUrl: 'https://payhip.com/b/example-pod',
+    unlockPassword: 'MIDNIGHT-MEND',
+    tags: ['Audio', 'Healing', 'Breakups'],
+    blocks: []
+  },
   {
     id: 'app-1',
     title: 'The Heart Mend Journey Tracker',
@@ -22,7 +72,7 @@ const SEED_DATA: Post[] = [
     type: 'app',
     coverImage: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=800&h=400',
     author: { ...DEFAULT_AUTHOR, name: 'Amour Tools' },
-    publishedAt: new Date().toISOString(),
+    publishedAt: new Date(Date.now() - 259200000).toISOString(),
     readTime: 'Interactive Tool',
     isPremium: true,
     price: 14.99,
@@ -152,23 +202,23 @@ export const getPosts = async (): Promise<Post[]> => {
   const stored = localStorage.getItem(STORAGE_KEY);
   const localPosts: Post[] = stored ? JSON.parse(stored) : SEED_DATA;
   
-  if (supabasePosts.length > 0) {
-      const merged = supabasePosts.map(sPost => {
-          const localMatch = localPosts.find(l => l.id === sPost.id);
-          if (localMatch) {
-              return {
-                  ...localMatch,
-                  ...sPost,
-                  payhipProductUrl: sPost.payhipProductUrl || localMatch.payhipProductUrl,
-                  unlockPassword: sPost.unlockPassword || localMatch.unlockPassword
-              };
-          }
-          return sPost;
-      });
-      return merged;
-  }
+  const combined = [...localPosts];
   
-  return localPosts;
+  supabasePosts.forEach(sPost => {
+      const localIndex = combined.findIndex(l => l.id === sPost.id);
+      if (localIndex >= 0) {
+          combined[localIndex] = {
+              ...combined[localIndex],
+              ...sPost,
+              payhipProductUrl: sPost.payhipProductUrl || combined[localIndex].payhipProductUrl,
+              unlockPassword: sPost.unlockPassword || combined[localIndex].unlockPassword
+          };
+      } else {
+          combined.push(sPost);
+      }
+  });
+
+  return combined.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 };
 
 export const savePost = async (post: Post): Promise<void> => {

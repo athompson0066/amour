@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Mic2, Play, Pause, Save, ArrowLeft, Loader2, Sparkles, Headphones, 
     User, Globe, Volume2, Trash2, Rocket, FileText, ChevronRight, CheckCircle2,
-    Music, Users, Radio, ToggleLeft, ToggleRight, Mic, Layout, Terminal, Settings2, Sliders, Disc, AlertTriangle, Image as ImageIcon, Volume1, VolumeX, Upload, FileAudio
+    Music, Users, Radio, ToggleLeft, ToggleRight, Mic, Layout, Terminal, Settings2, Sliders, Disc, AlertTriangle, Image as ImageIcon, Volume1, VolumeX, Upload, FileAudio, CircleDollarSign, ExternalLink, Key
 } from 'lucide-react';
 import { generateNarration, runAudioCrewMission } from '../services/geminiService';
 import { savePost, DEFAULT_AUTHOR } from '../services/storage';
@@ -83,6 +83,12 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
     const [tone, setTone] = useState('Warm and Empathetic');
     const [selectedMusic, setSelectedMusic] = useState('none');
     const [musicVolume, setMusicVolume] = useState(0.15);
+
+    // Monetization States
+    const [isPremium, setIsPremium] = useState(false);
+    const [price, setPrice] = useState('9.99');
+    const [payhipUrl, setPayhipUrl] = useState('');
+    const [unlockPassword, setUnlockPassword] = useState('');
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -353,7 +359,10 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
                 author: DEFAULT_AUTHOR,
                 publishedAt: new Date().toISOString(),
                 readTime: `${Math.ceil(script.split(' ').length / 150)} min audio`,
-                isPremium: false,
+                isPremium: isPremium,
+                price: isPremium ? parseFloat(price) : undefined,
+                payhipProductUrl: isPremium ? payhipUrl : undefined,
+                unlockPassword: isPremium ? unlockPassword : undefined,
                 tags: ['Audio Production', 'AI Voice', 'Mixed'],
                 blocks: [
                     {
@@ -379,6 +388,7 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
             onBack();
         } catch (e) {
             console.error(e);
+            alert("Failed to publish content.");
         } finally {
             setIsPublishing(false);
         }
@@ -399,7 +409,7 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
                 <div className="flex items-center space-x-3">
                     <button 
                         onClick={handlePublish}
-                        disabled={!audioBase64 || isPublishing}
+                        disabled={!audioBase64 || isPublishing || !title}
                         className="bg-slate-900 text-white px-8 py-2.5 rounded-full font-bold flex items-center hover:bg-slate-800 transition-all disabled:opacity-50 shadow-xl shadow-slate-900/10"
                     >
                         {isPublishing ? <Loader2 className="animate-spin mr-2" size={18} /> : <Rocket className="mr-2" size={18} />}
@@ -537,6 +547,74 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
                         </div>
                     </FadeIn>
 
+                    <FadeIn className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <CircleDollarSign className="text-amber-500" size={18} />
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Monetization</h3>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            <label className="flex items-center justify-between cursor-pointer">
+                                <div>
+                                    <span className="block text-xs font-bold text-slate-700">Premium Production</span>
+                                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Requires Payment</span>
+                                </div>
+                                <input 
+                                    type="checkbox" 
+                                    checked={isPremium} 
+                                    onChange={(e) => setIsPremium(e.target.checked)} 
+                                    className="w-5 h-5 rounded text-rose-600 focus:ring-rose-500 border-slate-300 shadow-sm" 
+                                />
+                            </label>
+                            <AnimatePresence>
+                                {isPremium && (
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                        <div className="mt-6 space-y-4 pt-4 border-t border-slate-200">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pricing (USD)</label>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-slate-400 font-mono text-sm">$</span>
+                                                    <input 
+                                                        type="number" 
+                                                        value={price} 
+                                                        onChange={(e) => setPrice(e.target.value)} 
+                                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-amber-500 outline-none" 
+                                                        step="0.01" 
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center">
+                                                    <ExternalLink size={10} className="mr-1" />
+                                                    Payhip Product Link
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    value={payhipUrl} 
+                                                    onChange={(e) => setPayhipUrl(e.target.value)} 
+                                                    placeholder="https://payhip.com/b/XXXX"
+                                                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-amber-500 outline-none" 
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-rose-500 uppercase mb-1 flex items-center">
+                                                    <Key size={10} className="mr-1" />
+                                                    Access Unlock Code
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    value={unlockPassword} 
+                                                    onChange={(e) => setUnlockPassword(e.target.value)} 
+                                                    placeholder="Secret code for customers"
+                                                    className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-rose-500 outline-none" 
+                                                />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </FadeIn>
+
                     {audioBase64 && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-rose-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-rose-900/20">
                             <div className="flex items-center space-x-4 mb-6">
@@ -578,16 +656,36 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
                           </div>
                           <div>
                               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 flex items-center">
-                                <Settings2 size={12} className="mr-1" /> Production Focus
+                                <ImageIcon size={12} className="mr-1" /> Featured Image URL
                               </label>
                               <input 
                                   type="text" 
-                                  value={crewInstructions} 
-                                  onChange={(e) => setCrewInstructions(e.target.value)}
-                                  placeholder="e.g. Deep insight into modern loneliness..."
+                                  value={featureImageUrl} 
+                                  /* FIX: Change setHeaderImageUrl to setFeatureImageUrl */
+                                  onChange={(e) => setFeatureImageUrl(e.target.value)}
+                                  placeholder="https://images.unsplash.com/..."
                                   className="w-full text-sm font-bold text-slate-700 border-b border-slate-100 focus:border-indigo-300 py-2 placeholder-slate-200 outline-none"
                               />
                           </div>
+                        </div>
+
+                        {featureImageUrl && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 overflow-hidden rounded-2xl shadow-inner border border-slate-100">
+                                <img src={featureImageUrl} className="w-full h-32 object-cover opacity-80" alt="Preview" />
+                            </motion.div>
+                        )}
+
+                        <div className="grid grid-cols-1 mb-6">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 flex items-center">
+                                <Settings2 size={12} className="mr-1" /> Production Focus
+                            </label>
+                            <input 
+                                type="text" 
+                                value={crewInstructions} 
+                                onChange={(e) => setCrewInstructions(e.target.value)}
+                                placeholder="e.g. Deep insight into modern loneliness..."
+                                className="w-full text-sm font-bold text-slate-700 border-b border-slate-100 focus:border-indigo-300 py-2 placeholder-slate-200 outline-none"
+                            />
                         </div>
 
                         <div className="bg-slate-900 rounded-3xl p-6 mb-6 font-mono text-[10px] text-slate-400 overflow-hidden relative shadow-inner">

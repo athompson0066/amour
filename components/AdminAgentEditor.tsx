@@ -27,7 +27,6 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Tools & Capabilities State
   const [tools, setTools] = useState<AgentTools>(initialAgent?.tools || { 
     googleSearch: false, 
     vision: false, 
@@ -93,43 +92,6 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
     setTools(prev => ({ ...prev, [tool]: !prev[tool] }));
   };
 
-  const addWebsite = () => {
-    if (!newWebsite.trim()) return;
-    const cleanUrl = newWebsite.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
-    if (!tools.targetWebsites?.includes(cleanUrl)) {
-        setTools(prev => ({
-            ...prev,
-            targetWebsites: [...(prev.targetWebsites || []), cleanUrl]
-        }));
-    }
-    setNewWebsite('');
-  };
-
-  const removeWebsite = (site: string) => {
-    setTools(prev => ({
-        ...prev,
-        targetWebsites: prev.targetWebsites?.filter(s => s !== site) || []
-    }));
-  };
-
-  const addDriveLink = () => {
-    if (!newDriveLink.trim()) return;
-    if (!tools.googleDriveLinks?.includes(newDriveLink.trim())) {
-        setTools(prev => ({
-            ...prev,
-            googleDriveLinks: [...(prev.googleDriveLinks || []), newDriveLink.trim()]
-        }));
-    }
-    setNewDriveLink('');
-  };
-
-  const removeDriveLink = (link: string) => {
-    setTools(prev => ({
-        ...prev,
-        googleDriveLinks: prev.googleDriveLinks?.filter(l => l !== link) || []
-    }));
-  };
-
   const getExternalEmbedCode = () => {
       const baseUrl = window.location.origin;
       const id = embedCode || initialAgent?.id;
@@ -143,7 +105,7 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
             <UserCheck className="mr-2 text-rose-500" />
             {initialAgent ? 'Update Expert' : 'Expert Onboarding'}
         </h2>
-        <div className="flex space-x-3">
+        <div className="flex items-center space-x-3">
           <button onClick={onCancel} className="px-5 py-2.5 text-slate-500 hover:bg-slate-100 rounded-full transition-colors text-sm font-bold">Cancel</button>
           <button 
             onClick={handleSave} 
@@ -159,7 +121,6 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
       <div className="max-w-6xl mx-auto mt-10 px-6">
         <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-12">
-                {/* Left Panel: Persona */}
                 <div className="lg:col-span-4 p-10 bg-slate-50/80 border-r border-slate-100 flex flex-col items-center">
                     <div className="relative mb-10">
                         <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-white">
@@ -190,13 +151,12 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
                     </div>
                 </div>
 
-                {/* Right Panel: Fields */}
                 <div className="lg:col-span-8 p-10 space-y-8 bg-white overflow-y-auto max-h-[800px] custom-scrollbar">
-                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl mb-4">
+                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl mb-4 shadow-inner">
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Expert Council Assignment</label>
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => setCategory('relationship')} className={`flex items-center justify-center space-x-3 p-4 rounded-2xl border transition-all ${category === 'relationship' ? 'bg-rose-600 border-rose-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500'}`}><Users size={18} /><span className="text-sm font-bold">Relationship Expert</span></button>
-                            <button onClick={() => setCategory('astro')} className={`flex items-center justify-center space-x-3 p-4 rounded-2xl border transition-all ${category === 'astro' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500'}`}><Stars size={18} /><span className="text-sm font-bold">Astro-Council</span></button>
+                            <button onClick={() => setCategory('relationship')} className={`flex items-center justify-center space-x-3 p-4 rounded-2xl border transition-all ${category === 'relationship' ? 'bg-rose-600 border-rose-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500 hover:border-rose-200'}`}><Users size={18} /><span className="text-sm font-bold">Relationship Expert</span></button>
+                            <button onClick={() => setCategory('astro')} className={`flex items-center justify-center space-x-3 p-4 rounded-2xl border transition-all ${category === 'astro' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-200'}`}><Stars size={18} /><span className="text-sm font-bold">Astro-Council</span></button>
                         </div>
                     </div>
 
@@ -207,30 +167,29 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
 
                     <div><label className="block text-sm font-black text-slate-900 mb-2 ml-1">Directory Bio</label><div className="relative"><textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="A powerful intro..." className="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none h-28 resize-none text-sm" /></div></div>
 
-                    {/* Capabilities Section */}
                     <div className="bg-slate-900 rounded-[2rem] p-8 border border-slate-800 shadow-2xl">
                         <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-rose-500/20 rounded-xl"><Zap className="text-rose-500" size={20} /></div><label className="block text-sm font-black text-white">Capabilities</label></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button onClick={() => toggleTool('googleSearch')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.googleSearch ? 'bg-rose-600/10 border-rose-500/50 text-rose-100' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><div className="flex items-center space-x-3"><Globe size={18} className={tools.googleSearch ? 'text-rose-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Google Grounding</span><span className="text-[9px] opacity-60">Real-time web</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.googleSearch ? 'border-rose-400 bg-rose-400' : 'border-slate-600'}`}>{tools.googleSearch && <Check size={10} className="text-white" />}</div></button>
-                            <button onClick={() => toggleTool('webScraping')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.webScraping ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-100' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><div className="flex items-center space-x-3"><Search size={18} className={tools.webScraping ? 'text-emerald-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Web Scraper</span><span className="text-[9px] opacity-60">Target websites</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.webScraping ? 'border-emerald-400 bg-emerald-400' : 'border-slate-600'}`}>{tools.webScraping && <Check size={10} className="text-white" />}</div></button>
-                            <button onClick={() => toggleTool('googleDriveEnabled')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.googleDriveEnabled ? 'bg-amber-600/10 border-amber-500/50 text-amber-100' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><div className="flex items-center space-x-3"><Database size={18} className={tools.googleDriveEnabled ? 'text-amber-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Drive Knowledge</span><span className="text-[9px] opacity-60">Reference Docs</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.googleDriveEnabled ? 'border-amber-400 bg-amber-400' : 'border-slate-600'}`}>{tools.googleDriveEnabled && <Check size={10} className="text-white" />}</div></button>
-                            <button onClick={() => toggleTool('vision')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.vision ? 'bg-blue-600/10 border-blue-500/50 text-blue-100' : 'bg-slate-800 border-slate-700 text-slate-400'}`}><div className="flex items-center space-x-3"><Eye size={18} className={tools.vision ? 'text-blue-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Image Vision</span><span className="text-[9px] opacity-60">Upload analysis</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.vision ? 'border-blue-400 bg-blue-400' : 'border-slate-600'}`}>{tools.vision && <Check size={10} className="text-white" />}</div></button>
+                            <button onClick={() => toggleTool('googleSearch')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.googleSearch ? 'bg-rose-600/10 border-rose-500/50 text-rose-100' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-rose-900'}`}><div className="flex items-center space-x-3"><Globe size={18} className={tools.googleSearch ? 'text-rose-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Google Grounding</span><span className="text-[9px] opacity-60">Real-time web</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.googleSearch ? 'border-rose-400 bg-rose-400' : 'border-slate-600'}`}>{tools.googleSearch && <Check size={10} className="text-white" />}</div></button>
+                            <button onClick={() => toggleTool('webScraping')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.webScraping ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-100' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-emerald-900'}`}><div className="flex items-center space-x-3"><Search size={18} className={tools.webScraping ? 'text-emerald-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Web Scraper</span><span className="text-[9px] opacity-60">Target websites</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.webScraping ? 'border-emerald-400 bg-emerald-400' : 'border-slate-600'}`}>{tools.webScraping && <Check size={10} className="text-white" />}</div></button>
+                            <button onClick={() => toggleTool('googleDriveEnabled')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.googleDriveEnabled ? 'bg-amber-600/10 border-amber-500/50 text-amber-100' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-amber-900'}`}><div className="flex items-center space-x-3"><Database size={18} className={tools.googleDriveEnabled ? 'text-amber-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Drive Knowledge</span><span className="text-[9px] opacity-60">Reference Docs</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.googleDriveEnabled ? 'border-amber-400 bg-amber-400' : 'border-slate-600'}`}>{tools.googleDriveEnabled && <Check size={10} className="text-white" />}</div></button>
+                            <button onClick={() => toggleTool('vision')} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${tools.vision ? 'bg-blue-600/10 border-blue-500/50 text-blue-100' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-blue-900'}`}><div className="flex items-center space-x-3"><Eye size={18} className={tools.vision ? 'text-blue-400' : 'text-slate-500'} /><div className="text-left"><span className="block text-xs font-bold">Image Vision</span><span className="text-[9px] opacity-60">Upload analysis</span></div></div><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tools.vision ? 'border-blue-400 bg-blue-400' : 'border-slate-600'}`}>{tools.vision && <Check size={10} className="text-white" />}</div></button>
                         </div>
                     </div>
 
                     <div className="bg-indigo-50/50 p-8 rounded-[2rem] border border-indigo-100"><div className="flex items-center space-x-3 mb-4"><div className="p-2 bg-indigo-100 rounded-xl"><Sparkles className="text-indigo-600" size={20} /></div><label className="block text-sm font-black text-indigo-900">AI Personality Core</label></div><textarea value={systemInstruction} onChange={(e) => setSystemInstruction(e.target.value)} placeholder="Custom behavior instructions..." className="w-full px-5 py-4 border border-indigo-200 rounded-2xl outline-none h-32 resize-none bg-white text-sm" /></div>
 
-                    <div className="bg-rose-50/50 p-8 rounded-[2rem] border border-rose-100">
+                    <div className="bg-rose-50/50 p-8 rounded-[2rem] border border-rose-100 shadow-inner">
                         <div className="flex items-center justify-between mb-4"><div className="flex items-center space-x-3"><div className="p-2 bg-rose-100 rounded-xl"><Code2 className="text-rose-600" size={20} /></div><label className="block text-sm font-black text-rose-900">Custom Embed Slug</label></div></div>
-                        <input type="text" value={embedCode} onChange={(e) => setEmbedCode(e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. scorpio-expert" className="w-full px-5 py-4 border border-rose-200 rounded-2xl outline-none bg-white font-mono text-sm text-rose-600" />
+                        <input type="text" value={embedCode} onChange={(e) => setEmbedCode(e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. scorpio-expert" className="w-full px-5 py-4 border border-rose-200 rounded-2xl outline-none bg-white font-mono text-sm text-rose-600 focus:ring-2 focus:ring-rose-500/20" />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div><label className="block text-sm font-black text-slate-900 mb-2 ml-1">Consultation Rate</label><input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$2.99/min" className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl outline-none" /></div>
-                        <div><label className="block text-sm font-black text-slate-900 mb-2 ml-1">Expertise Domains</label><input type="text" value={expertiseStr} onChange={(e) => setExpertiseStr(e.target.value)} placeholder="Dating, Loss, Trust..." className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl outline-none" /></div>
+                        <div><label className="block text-sm font-black text-slate-900 mb-2 ml-1">Consultation Rate</label><input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$2.99/min" className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500/10" /></div>
+                        <div><label className="block text-sm font-black text-slate-900 mb-2 ml-1">Expertise Domains</label><input type="text" value={expertiseStr} onChange={(e) => setExpertiseStr(e.target.value)} placeholder="Dating, Loss, Trust..." className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500/10" /></div>
                     </div>
 
-                    <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 mt-8">
+                    <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 mt-8 shadow-sm">
                         <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-amber-100 rounded-xl"><CircleDollarSign className="text-amber-600" size={20} /></div><label className="block text-sm font-black text-amber-900">Monetization & Access</label></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div><label className="block text-xs font-bold text-amber-600 uppercase mb-2 ml-1">Payhip Value ($)</label><input type="number" value={priceValue} onChange={(e) => setPriceValue(parseFloat(e.target.value))} className="w-full px-5 py-3.5 bg-white border border-amber-200 rounded-2xl outline-none" step="0.01" /></div>
@@ -239,7 +198,7 @@ const AdminAgentEditor: React.FC<AdminAgentEditorProps> = ({ onCancel, onSave, i
                         <div className="mt-6 pt-6 border-t border-amber-200/50">
                             <label className="block text-xs font-bold text-rose-600 uppercase mb-2 ml-1 flex items-center"><Key size={14} className="mr-1" /> Access Unlock Password</label>
                             <input type="text" value={unlockPassword} onChange={(e) => setUnlockPassword(e.target.value)} placeholder="Secret key to unlock expert access" className="w-full px-5 py-3.5 bg-white border border-rose-200 rounded-2xl outline-none text-sm font-mono focus:ring-2 focus:ring-rose-500/20" />
-                            <p className="text-[10px] text-amber-700 mt-2 italic px-1">Provide this exact key to customers after they pay on Payhip to grant them access.</p>
+                            <p className="text-[10px] text-amber-700 mt-2 italic px-1 leading-relaxed">Ensure you send this exact key to customers after their successful Payhip purchase to grant session entry.</p>
                         </div>
                     </div>
                 </div>
