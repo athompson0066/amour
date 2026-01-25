@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Mic2, Play, Pause, Save, ArrowLeft, Loader2, Sparkles, Headphones, 
     User, Globe, Volume2, Trash2, Rocket, FileText, ChevronRight, CheckCircle2,
-    Music, Users, Radio, ToggleLeft, ToggleRight, Mic, Layout, Terminal, Settings2, Sliders, Disc, AlertTriangle, Image as ImageIcon, Volume1, VolumeX
+    Music, Users, Radio, ToggleLeft, ToggleRight, Mic, Layout, Terminal, Settings2, Sliders, Disc, AlertTriangle, Image as ImageIcon, Volume1, VolumeX, Upload, FileAudio
 } from 'lucide-react';
 import { generateNarration, runAudioCrewMission } from '../services/geminiService';
 import { savePost, DEFAULT_AUTHOR } from '../services/storage';
@@ -16,16 +16,7 @@ interface AdminAudioStudioProps {
   onPublished: () => void;
 }
 
-const VOICES = [
-    { id: 'Puck', label: 'Puck', gender: 'female', desc: 'Friendly & Warm' },
-    { id: 'Kore', label: 'Kore', gender: 'male', desc: 'Professional & Neutral' },
-    { id: 'Charon', label: 'Charon', gender: 'male', desc: 'Deep & Authoritative' },
-    { id: 'Fenrir', label: 'Fenrir', gender: 'male', desc: 'Rugged & Earthy' },
-    { id: 'Zephyr', label: 'Zephyr', gender: 'male', desc: 'Light & Youthful' }
-];
-
-// Using Archive.org and specific open-source files which are highly CORS-friendly and stable
-const BACKGROUND_MUSIC = [
+const PRESET_MUSIC = [
     { id: 'none', label: 'No Music', url: '' },
     { id: 'lofi', label: 'Lofi Chill', url: 'https://archive.org/download/LofiHipHopFreeUse/Lofi%20Hip%20Hop%20-%20Free%20Use.mp3' },
     { id: 'ambient', label: 'Deep Ambient', url: 'https://archive.org/download/ambient-music-collection/Deep%20Space%20Atmosphere.mp3' },
@@ -42,6 +33,14 @@ const BACKGROUNDS = [
     "Middle Eastern",
     "European / British",
     "Australian"
+];
+
+const VOICES = [
+    { id: 'Puck', label: 'Puck', gender: 'female', desc: 'Friendly & Warm' },
+    { id: 'Kore', label: 'Kore', gender: 'male', desc: 'Professional & Neutral' },
+    { id: 'Charon', label: 'Charon', gender: 'male', desc: 'Deep & Authoritative' },
+    { id: 'Fenrir', label: 'Fenrir', gender: 'male', desc: 'Rugged & Earthy' },
+    { id: 'Zephyr', label: 'Zephyr', gender: 'male', desc: 'Light & Youthful' }
 ];
 
 const audioBufferCache: Record<string, AudioBuffer> = {};
@@ -92,6 +91,10 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
     const [missionLog, setMissionLog] = useState<string[]>([]);
     const [quotaError, setQuotaError] = useState(false);
 
+    // Custom Audio States
+    const [customTracks, setCustomTracks] = useState<{ id: string, label: string, url: string }[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     // Mixed Output Refs
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
@@ -99,12 +102,13 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
     const voiceSourceRef = useRef<AudioBufferSourceNode | null>(null);
     const musicSourceRef = useRef<AudioBufferSourceNode | null>(null);
     
-    // Preview Track Refs - Using standard HTML5 Audio for individual track previews to bypass strict fetch/CORS
+    // Preview Track Refs
     const previewAudioRef = useRef<HTMLAudioElement | null>(null);
     const [playingAtmosId, setPlayingAtmosId] = useState<string | null>(null);
 
+    const combinedMusicList = [...PRESET_MUSIC, ...customTracks];
+
     const stopAllAudio = () => {
-        // Stop Mixed Playback
         try {
             voiceSourceRef.current?.stop();
             voiceSourceRef.current = null;
@@ -116,7 +120,6 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
             audioContextRef.current = null;
         } catch (e) {}
 
-        // Stop Preview Track
         if (previewAudioRef.current) {
             previewAudioRef.current.pause();
             previewAudioRef.current.src = "";
@@ -127,7 +130,34 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
         setPlayingAtmosId(null);
     };
 
-    // Feature: Preview sounds with reliable HTML5 Audio element
+    const handleCustomFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('audio/')) {
+            alert("Please select a valid audio file (MP3, WAV, etc.)");
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+        const newTrack = {
+            id: `custom_${Date.now()}`,
+            label: file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name,
+            url: url
+        };
+
+        setCustomTracks(prev => [...prev, newTrack]);
+        setSelectedMusic(newTrack.id);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const removeCustomTrack = (id: string) => {
+        const track = customTracks.find(t => t.id === id);
+        if (track) URL.revokeObjectURL(track.url);
+        setCustomTracks(prev => prev.filter(t => t.id !== id));
+        if (selectedMusic === id) setSelectedMusic('none');
+    };
+
     const previewAtmos = (track: { id: string, url: string }) => {
         if (playingAtmosId === track.id) {
             stopAllAudio();
@@ -235,7 +265,6 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
             audioContextRef.current = ctx;
             if (ctx.state === 'suspended') await ctx.resume();
 
-            // 1. Prepare Voice Buffer
             const voiceBinary = atob(audioBase64);
             const vLen = voiceBinary.length;
             const voiceBytes = new Uint8Array(vLen);
@@ -247,16 +276,14 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
             const voiceSource = ctx.createBufferSource();
             voiceSource.buffer = voiceBuffer;
             
-            // 2. Prepare Music if selected
             let musicBufferToPlay: AudioBuffer | null = null;
-            const musicTrack = BACKGROUND_MUSIC.find(m => m.id === selectedMusic);
+            const musicTrack = combinedMusicList.find(m => m.id === selectedMusic);
             
             if (musicTrack && musicTrack.url) {
                 try {
                     if (audioBufferCache[musicTrack.url]) {
                         musicBufferToPlay = audioBufferCache[musicTrack.url];
                     } else {
-                        // Use omit for credentials and simple cors mode for public assets
                         const musicResponse = await fetch(musicTrack.url, { 
                           method: 'GET',
                           mode: 'cors',
@@ -273,7 +300,6 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
                 }
             }
 
-            // 3. Connect & Play
             if (musicBufferToPlay) {
                 const musicSource = ctx.createBufferSource();
                 musicSource.buffer = musicBufferToPlay;
@@ -304,7 +330,10 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
     };
 
     useEffect(() => {
-        return () => stopAllAudio();
+        return () => {
+            stopAllAudio();
+            customTracks.forEach(t => URL.revokeObjectURL(t.url));
+        };
     }, []);
 
     const handlePublish = async () => {
@@ -357,7 +386,7 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20">
-            <div className="bg-white border-b border-slate-200 sticky top-16 z-30 px-6 py-4 flex justify-between items-center shadow-sm">
+            <div className="bg-white border-b border-slate-200 sticky top-16 z-40 px-6 py-4 flex justify-between items-center shadow-sm">
                 <div className="flex items-center space-x-4">
                     <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
                         <ArrowLeft size={20} />
@@ -436,27 +465,55 @@ const AdminAudioStudio: React.FC<AdminAudioStudioProps> = ({ onBack, onPublished
 
                             <div className="pt-4 border-t border-slate-100 space-y-4">
                                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
-                                    <div className="flex items-center space-x-2 mb-4">
-                                        <Disc className="text-indigo-500" size={16} />
-                                        <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">Atmospheric Mixing</label>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-2">
+                                            <Disc className="text-indigo-500" size={16} />
+                                            <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest">Atmospheric Mixing</label>
+                                        </div>
+                                        <button 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="p-1.5 bg-white text-indigo-600 border border-indigo-100 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm"
+                                            title="Upload custom MP3"
+                                        >
+                                            <Upload size={14} />
+                                        </button>
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef} 
+                                            className="hidden" 
+                                            accept="audio/mp3,audio/mpeg,audio/wav" 
+                                            onChange={handleCustomFileUpload} 
+                                        />
                                     </div>
                                     <div className="grid grid-cols-1 gap-2 mb-4">
-                                        {BACKGROUND_MUSIC.map(m => (
-                                            <div key={m.id} className="flex items-center space-x-1 w-full">
+                                        {combinedMusicList.map(m => (
+                                            <div key={m.id} className="flex items-center space-x-1 w-full group/track">
                                                 <button 
                                                     onClick={() => setSelectedMusic(m.id)}
-                                                    className={`flex-grow text-left py-2 px-3 rounded-xl text-[10px] font-bold border transition-all ${selectedMusic === m.id ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500'}`}
+                                                    className={`flex-grow text-left py-2 px-3 rounded-xl text-[10px] font-bold border transition-all flex items-center ${selectedMusic === m.id ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-200'}`}
                                                 >
-                                                    {m.label}
+                                                    {m.id.startsWith('custom_') && <FileAudio size={12} className="mr-1.5 opacity-60" />}
+                                                    <span className="truncate">{m.label}</span>
                                                 </button>
                                                 {m.id !== 'none' && (
-                                                    <button 
-                                                        onClick={() => previewAtmos(m)}
-                                                        className={`p-2 rounded-lg border transition-all ${playingAtmosId === m.id ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-500'}`}
-                                                        title="Listen to preview"
-                                                    >
-                                                        {playingAtmosId === m.id ? <VolumeX size={14} /> : <Volume1 size={14} />}
-                                                    </button>
+                                                    <div className="flex space-x-0.5">
+                                                        <button 
+                                                            onClick={() => previewAtmos(m)}
+                                                            className={`p-2 rounded-lg border transition-all ${playingAtmosId === m.id ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-500'}`}
+                                                            title="Listen to preview"
+                                                        >
+                                                            {playingAtmosId === m.id ? <VolumeX size={14} /> : <Volume1 size={14} />}
+                                                        </button>
+                                                        {m.id.startsWith('custom_') && (
+                                                            <button 
+                                                                onClick={() => removeCustomTrack(m.id)}
+                                                                className="p-2 bg-white text-slate-300 border border-slate-200 rounded-lg hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover/track:opacity-100"
+                                                                title="Remove track"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         ))}
