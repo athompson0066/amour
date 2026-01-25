@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, LayoutDashboard, Menu, X, BookOpen, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Heart, LayoutDashboard, Menu, X, BookOpen, Settings, ShieldCheck, LogOut, Mail, Instagram, Twitter, Youtube, Send, Sparkles } from 'lucide-react';
 import { User } from '../types';
 
 interface LayoutProps {
@@ -27,6 +27,17 @@ const Layout: React.FC<LayoutProps> = ({
   user
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 5000);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800 relative selection:bg-rose-200 selection:text-rose-900">
@@ -139,8 +150,102 @@ const Layout: React.FC<LayoutProps> = ({
         {children}
       </main>
 
-      <footer className="mt-20 border-t border-rose-100/50 pt-16 pb-8 text-center text-slate-400">
-        <p className="text-sm">&copy; 2024 Amour Directory. Made with <Heart size={10} className="inline text-rose-300 fill-current" /> by AI</p>
+      <footer className="mt-20 bg-slate-900 text-slate-300">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+            
+            {/* Branding Column */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="flex items-center cursor-pointer" onClick={() => onChangeView('home')}>
+                <div className="bg-rose-500 p-2 rounded-full">
+                  <Heart className="h-5 w-5 text-white fill-current" />
+                </div>
+                <span className="ml-3 text-2xl font-serif font-bold text-white tracking-tight">
+                  Amour<span className="text-rose-500">.</span>
+                </span>
+              </div>
+              <p className="text-slate-400 leading-relaxed max-w-sm">
+                The world's premier digital sanctuary for intentional connection. Curating high-fidelity wisdom and expert AI guidance to help you master the art of relationships.
+              </p>
+              <div className="flex space-x-4 pt-4">
+                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition-all"><Twitter size={18} /></a>
+                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition-all"><Instagram size={18} /></a>
+                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition-all"><Youtube size={18} /></a>
+              </div>
+            </div>
+
+            {/* Links Columns */}
+            <div className="lg:col-span-2 space-y-6">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Content</h4>
+              <ul className="space-y-3 text-sm">
+                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Directory</button></li>
+                <li><button onClick={() => onChangeView('video-hub')} className="hover:text-rose-400 transition-colors">Masterclass Vault</button></li>
+                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Premium Courses</button></li>
+                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Listen & Learn</button></li>
+              </ul>
+            </div>
+
+            <div className="lg:col-span-2 space-y-6">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Tools</h4>
+              <ul className="space-y-3 text-sm">
+                <li><button onClick={() => onChangeView('toolkit')} className="hover:text-rose-400 transition-colors">Healing Tracker</button></li>
+                <li><button onClick={() => onChangeView('astrology')} className="hover:text-rose-400 transition-colors">Astro-Council</button></li>
+                <li><button onClick={() => onChangeView('agents')} className="hover:text-rose-400 transition-colors">Expert Network</button></li>
+                <li><button onClick={() => onChangeView('home')} className="hover:text-rose-400 transition-colors">Soulmate Sketch</button></li>
+              </ul>
+            </div>
+
+            {/* Newsletter Column */}
+            <div className="lg:col-span-4 space-y-6">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Stay Inspired</h4>
+              <p className="text-slate-400 text-sm">Join 15,000+ others receiving our weekly dispatch on love and consciousness.</p>
+              
+              <form onSubmit={handleSubscribe} className="relative">
+                <div className={`absolute inset-0 bg-rose-500/20 blur-xl rounded-full transition-opacity duration-1000 ${subscribed ? 'opacity-100' : 'opacity-0'}`}></div>
+                <div className="relative flex items-center bg-slate-800 rounded-full p-1 border border-slate-700 focus-within:border-rose-500/50 transition-all">
+                  <Mail className="ml-4 text-slate-500" size={18} />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email" 
+                    className="flex-grow bg-transparent border-none outline-none px-4 py-2.5 text-sm text-white placeholder-slate-500"
+                    disabled={subscribed}
+                  />
+                  <button 
+                    type="submit"
+                    disabled={subscribed}
+                    className={`px-6 py-2.5 rounded-full font-bold text-xs transition-all flex items-center space-x-2 ${subscribed ? 'bg-emerald-500 text-white' : 'bg-rose-600 text-white hover:bg-rose-500'}`}
+                  >
+                    {subscribed ? (
+                      <>
+                        <Sparkles size={14} />
+                        <span>Subscribed!</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Join</span>
+                        <Send size={14} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div className="mt-20 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <Sparkles size={12} className="text-rose-500" />
+              <span>&copy; 2024 Amour Directory. All rights reserved.</span>
+            </div>
+            <div className="flex space-x-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Support</a>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

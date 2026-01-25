@@ -5,7 +5,7 @@ import {
     ArrowLeft, Calendar, Clock, Share2, Lock, CheckCircle, ChevronRight, Star, 
     BookOpen, Check, Map, Lightbulb, ListChecks, PenTool, BrainCircuit, 
     PlayCircle, X, Youtube, Twitter, Facebook, Linkedin, Link, MessageCircle, UserCheck, MessageSquare, Phone, AlertTriangle, Video, HelpCircle, ShieldCheck, FileDown, ExternalLink,
-    Play, Pause, Volume2, Music, Disc, Loader2, Sparkles, Key
+    Play, Pause, Volume2, Music, Disc, Loader2, Sparkles, Key, Hourglass, Timer
 } from 'lucide-react';
 import { ParallaxHeader, FadeIn, StaggerGrid, StaggerItem } from './Animated';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -525,7 +525,8 @@ const formatInlineStyles = (text: string) => {
 };
 
 const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock, onLoginRequest }) => {
-  const hasAccess = !post.isPremium || (user && user.purchasedContentIds.includes(post.id)) || (user && user.isSubscriber);
+  const isPaid = (user && user.purchasedContentIds.includes(post.id)) || (user && user.isSubscriber);
+  const hasAccess = !post.isPremium || isPaid;
   const isCourse = post.type === 'course';
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
@@ -642,14 +643,11 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
 
       <article className="max-w-3xl mx-auto px-6 py-16">
         {courseSections.map((section, sectionIndex) => {
-            // Updated Gating Logic: 
-            // - If post has multiple sections, show index 0 AND 1 as preview.
-            // - If post has only one section, show index 0 but apply fade-out to last block.
             const teaserLimit = courseSections.length > 1 ? 1 : 0;
             const isGated = !hasAccess && post.isPremium && sectionIndex > teaserLimit;
             
-            // If it's a course and the user is paid up, only show sections they reached
-            if (isCourse && hasAccess && sectionIndex > completedSections) return null;
+            // Strictly enforce time capsule order
+            const isLockedCapsule = isCourse && sectionIndex > completedSections;
 
             if (isGated) {
                 // Show the paywall at the first gated index
@@ -683,25 +681,31 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                                     Have a Code?
                                 </button>
                             </div>
-                            
-                            <div className="flex flex-wrap justify-center gap-6 pt-6 border-t border-indigo-100/50">
-                                <div className="flex items-center text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                                    <CheckCircle size={14} className="mr-1.5" />
-                                    Lifetime Access
-                                </div>
-                                <div className="flex items-center text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                                    <CheckCircle size={14} className="mr-1.5" />
-                                    Mobile Friendly
-                                </div>
-                                <div className="flex items-center text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                                    <CheckCircle size={14} className="mr-1.5" />
-                                    Certification
-                                </div>
-                            </div>
                         </FadeIn>
                     );
                 }
                 return null;
+            }
+
+            // Time Capsule Linear Logic:
+            // If user is paid but hasn't reached this section yet, show it as a "Time Capsule"
+            if (isLockedCapsule) {
+                return (
+                    <FadeIn key={`capsule-${sectionIndex}`} className="mb-8 p-12 bg-slate-50 rounded-[3rem] border border-slate-200 text-center relative group overflow-hidden">
+                        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+                             <div className="text-slate-400 font-bold text-sm flex items-center"><Timer size={16} className="mr-2" /> Finish previous module to open this capsule</div>
+                        </div>
+                        <div className="w-16 h-16 bg-white shadow-md text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Hourglass size={24} />
+                        </div>
+                        <h4 className="text-xl font-serif font-bold text-slate-400 mb-2">{sectionTitles[sectionIndex]}</h4>
+                        <div className="flex items-center justify-center space-x-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                            <span>Locked Time Capsule</span>
+                            <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                            <span>Module {sectionIndex + 1}</span>
+                        </div>
+                    </FadeIn>
+                );
             }
 
             const hasQuiz = section.some(b => b.type === 'quiz' && b.meta?.questions && b.meta.questions.length > 0);
@@ -710,7 +714,6 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
             return (
                 <div key={sectionIndex} id={`section-${sectionIndex}`} className="mb-20 scroll-mt-40">
                     {section.map((block, blockIdx) => {
-                        // Apply fade out to the last block of the preview teaser section
                         const isLastBlockOfTeaser = !hasAccess && post.isPremium && sectionIndex === teaserLimit && blockIdx === section.length - 1;
 
                         switch(block.type) {
@@ -818,14 +821,17 @@ const ArticleView: React.FC<ArticleViewProps> = ({ post, user, onBack, onUnlock,
                     })}
 
                     {isCourse && hasAccess && sectionIndex === completedSections && sectionIndex < courseSections.length - 1 && canAdvance && (
-                        <FadeIn className="mt-16 p-12 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 flex flex-col items-center text-center shadow-lg shadow-emerald-900/5">
+                        <FadeIn className="mt-16 p-12 bg-emerald-50 rounded-[2.5rem] border border-emerald-100 flex flex-col items-center text-center shadow-lg shadow-emerald-900/5 relative overflow-hidden">
+                             <div className="absolute top-0 right-0 p-6 opacity-10">
+                                 <Sparkles size={100} className="text-emerald-600" />
+                             </div>
                              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 text-emerald-600 shadow-sm">
                                  <CheckCircle size={32} />
                              </div>
-                             <h4 className="text-xl font-bold text-slate-900 mb-2">Step Complete!</h4>
-                             <p className="text-slate-600 mb-8 max-w-xs">You've mastered this module. Ready to dive into the next chapter?</p>
-                             <button onClick={handleCompleteSection} className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-full font-bold shadow-xl shadow-emerald-900/10 transition-all hover:-translate-y-1">
-                                 Advance to {sectionTitles[sectionIndex + 1]}
+                             <h4 className="text-xl font-bold text-slate-900 mb-2">Capsule Completed!</h4>
+                             <p className="text-slate-600 mb-8 max-w-xs">You've successfully absorbed this week's knowledge. Ready to unseal the next Time Capsule?</p>
+                             <button onClick={handleCompleteSection} className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-full font-black text-sm shadow-xl shadow-emerald-900/10 transition-all hover:-translate-y-1 active:scale-95">
+                                 Unlock next Time Capsule: {sectionTitles[sectionIndex + 1]}
                              </button>
                         </FadeIn>
                     )}

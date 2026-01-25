@@ -24,7 +24,9 @@ import { FadeIn, StaggerGrid, StaggerItem } from './components/Animated';
 import { Post, ContentType, Agent, User } from './types';
 import { getPosts, getAgents, getAstroAgents, deletePost as storageDeletePost, deleteAgent as storageDeleteAgent } from './services/storage';
 import { getCurrentUser, updateUser, isAdminAuthenticated, logoutAdmin } from './services/authService';
-import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles } from 'lucide-react';
+import { X, Loader2, BookOpen, Heart, Wrench, Stars, Inbox, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const POSTS_PER_PAGE = 9;
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState('home');
@@ -41,6 +43,9 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isExternalEmbed, setIsExternalEmbed] = useState(false);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [user, setUser] = useState<User | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -67,7 +72,6 @@ const App: React.FC = () => {
             getPosts().then(allPosts => {
                 const target = allPosts.find(p => p.id === postId);
                 if (target) {
-                    // We now allow viewing premium posts directly to show the preview
                     setSelectedPost(target);
                     setCurrentView('article');
                 }
@@ -96,6 +100,11 @@ const App: React.FC = () => {
     };
     initUser();
   }, []);
+
+  // Reset pagination when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, searchQuery]);
 
   const refreshData = async () => {
     setIsLoadingPosts(true);
@@ -142,7 +151,6 @@ const App: React.FC = () => {
   };
 
   const handlePostClick = (post: Post) => {
-    // Interactive apps still require immediate unlock
     if (post.id === 'app-1' && !checkAccess(post.id, post.isPremium)) {
         setPendingPaymentItem(post);
         setShowPaymentModal(true);
@@ -154,7 +162,6 @@ const App: React.FC = () => {
         return;
     }
     
-    // For articles and courses, we ALWAYS allow clicking so they see the PREVIEW
     setSelectedPost(post);
     setCurrentView('article');
     
@@ -226,6 +233,16 @@ const App: React.FC = () => {
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesType && matchesSearch;
   });
+
+  // Calculate Paginated Content
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+
+  const handlePageChange = (page: number) => {
+      setCurrentPage(page);
+      document.getElementById('directory-content')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const toolApps = posts.filter(p => p.type === 'app');
 
@@ -330,13 +347,60 @@ const App: React.FC = () => {
             ) : (
                 <AnimatePresence mode="wait">
                     {filteredPosts.length > 0 ? (
-                        <StaggerGrid key={filterType} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {filteredPosts.map(post => (
-                                <StaggerItem key={post.id}>
-                                    <ArticleCard post={post} onClick={handlePostClick} />
-                                </StaggerItem>
-                            ))}
-                        </StaggerGrid>
+                        <div key={filterType + currentPage}>
+                            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {paginatedPosts.map(post => (
+                                    <StaggerItem key={post.id}>
+                                        <ArticleCard post={post} onClick={handlePostClick} />
+                                    </StaggerItem>
+                                ))}
+                            </StaggerGrid>
+                            
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="mt-16 flex flex-col items-center">
+                                    <div className="flex items-center space-x-2">
+                                        <button 
+                                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                                            disabled={currentPage === 1}
+                                            className="p-3 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        
+                                        <div className="flex items-center px-4 space-x-1">
+                                            {[...Array(totalPages)].map((_, i) => {
+                                                const page = i + 1;
+                                                return (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => handlePageChange(page)}
+                                                        className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${
+                                                            currentPage === page
+                                                            ? 'bg-rose-600 text-white shadow-lg shadow-rose-200'
+                                                            : 'bg-white text-slate-500 hover:bg-rose-50 hover:text-rose-600'
+                                                        }`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <button 
+                                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="p-3 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                    <p className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        Page {currentPage} of {totalPages}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
