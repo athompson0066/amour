@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import Layout from './components/Layout';
 import ArticleCard from './components/ArticleCard';
 import ArticleView from './components/ArticleView';
@@ -469,6 +470,7 @@ const App: React.FC = () => {
           )}
         </div>
       )}
+      <Analytics />
     </Layout>
   );
 };
