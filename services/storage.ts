@@ -86,9 +86,10 @@ const removeFromBlacklist = (id: string) => {
 const mapRowToPost = (row: any): Post => ({
   id: row.id,
   title: row.title,
-  subtitle: row.subtitle || '',
+  // Support multiple naming conventions for descriptions
+  subtitle: row.subtitle || row.description || row.summary || '',
   type: row.type || 'article',
-  coverImage: row.cover_image || row.image || 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1200&h=600',
+  coverImage: row.cover_image || row.image || '',
   author: row.author || DEFAULT_AUTHOR,
   publishedAt: row.published_at || row.created_at || new Date().toISOString(),
   readTime: row.read_time || '5 min read', 
@@ -102,10 +103,6 @@ const mapRowToPost = (row: any): Post => ({
   seo: row.seo || undefined
 });
 
-/**
- * ADAPTIVE MAPPING: Returns a payload based on the requested complexity level.
- * Minimal mode is designed to survive in tables with only basic columns.
- */
 const mapPostToRow = (post: Post, minimal = false) => {
     const row: any = {
         id: post.id,
@@ -125,7 +122,6 @@ const mapPostToRow = (post: Post, minimal = false) => {
         row.tags = post.tags || [];
         row.related_videos = post.relatedVideos || [];
         row.seo = post.seo || null;
-        // We still omit payhip/unlock here unless user confirms they exist
     }
 
     return row;
@@ -137,7 +133,7 @@ const mapRowToAgent = (row: any): Agent => ({
     role: row.role,
     category: row.category || 'relationship',
     avatar: row.avatar,
-    description: row.description,
+    description: row.description || row.bio || '',
     systemInstruction: row.system_instruction,
     embedCode: row.embed_code,
     tokenCost: row.token_cost || 5, 
@@ -185,7 +181,7 @@ export const getPosts = async (): Promise<Post[]> => {
   
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
+      const { data, error } = await supabase.from('posts').select('*');
       if (error) console.error("Supabase fetch error:", error.message);
       else if (data) supabasePosts = data.map(mapRowToPost);
     } catch (e) {
@@ -194,12 +190,42 @@ export const getPosts = async (): Promise<Post[]> => {
   }
 
   const stored = localStorage.getItem(STORAGE_KEY);
-  const localPosts: Post[] = stored ? JSON.parse(stored) : SEED_DATA;
+  const localPosts: Post[] = stored ? JSON.parse(stored) : [];
   
   const combinedMap = new Map<string, Post>();
+  
+  // 1. Start with SEED DATA
   SEED_DATA.forEach(p => combinedMap.set(p.id, p));
-  localPosts.forEach(p => combinedMap.set(p.id, p));
-  supabasePosts.forEach(p => combinedMap.set(p.id, p));
+  
+  // 2. Overlay SUPABASE DATA
+  supabasePosts.forEach(sp => {
+      const existing = combinedMap.get(sp.id);
+      if (existing) {
+          combinedMap.set(sp.id, {
+              ...existing,
+              ...sp,
+              coverImage: sp.coverImage || existing.coverImage,
+              subtitle: sp.subtitle || existing.subtitle,
+              tags: sp.tags?.length > 0 ? sp.tags : existing.tags
+          });
+      } else {
+          combinedMap.set(sp.id, sp);
+      }
+  });
+
+  // 3. Final Overlay LOCAL STORAGE (Active working copy)
+  localPosts.forEach(lp => {
+      const existing = combinedMap.get(lp.id);
+      if (existing) {
+          combinedMap.set(lp.id, { 
+            ...existing, 
+            ...lp,
+            subtitle: lp.subtitle || existing.subtitle
+          });
+      } else {
+          combinedMap.set(lp.id, lp);
+      }
+  });
 
   const combined = Array.from(combinedMap.values());
 
@@ -211,10 +237,10 @@ export const getPosts = async (): Promise<Post[]> => {
 export const savePost = async (post: Post): Promise<void> => {
   removeFromBlacklist(post.id);
 
-  // 1. Local Storage Update (Safety First)
+  // 1. Local Storage Update
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      let currentPosts: Post[] = stored ? JSON.parse(stored) : [...SEED_DATA];
+      let currentPosts: Post[] = stored ? JSON.parse(stored) : [];
       const idx = currentPosts.findIndex(p => p.id === post.id);
       if (idx >= 0) currentPosts[idx] = post;
       else currentPosts.unshift(post);
@@ -227,27 +253,18 @@ export const savePost = async (post: Post): Promise<void> => {
   const supabase = getSupabase();
   if (supabase) {
     try {
-      // Phase A: Try full payload
       const fullRow = mapPostToRow(post, false);
       const { error: fullError } = await supabase.from('posts').upsert(fullRow, { onConflict: 'id' });
       
       if (fullError) {
-          // Phase B: Detect missing columns (Code 42703 in Postgres)
           if (fullError.code === '42703' || fullError.message.toLowerCase().includes('column')) {
-              console.warn("Full sync failed due to missing columns. Attempting Minimal Core Sync...");
               const minRow = mapPostToRow(post, true);
-              const { error: minError } = await supabase.from('posts').upsert(minRow, { onConflict: 'id' });
-              
-              if (minError) {
-                  throw new Error(`Minimal Sync Failed: ${minError.message}. Basic 'posts' table structure required.`);
-              }
-              console.log("Core Sync successful. Content is live without partial metadata.");
+              await supabase.from('posts').upsert(minRow, { onConflict: 'id' });
           } else {
               throw new Error(fullError.message);
           }
       }
     } catch (e: any) {
-      console.error("Cloud sync exception:", e);
       throw e;
     }
   }
@@ -281,7 +298,7 @@ export const deletePost = async (id: string): Promise<void> => {
 
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      let currentPosts: Post[] = stored ? JSON.parse(stored) : [...SEED_DATA];
+      let currentPosts: Post[] = stored ? JSON.parse(stored) : [];
       const newPosts = currentPosts.filter(p => p.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newPosts));
   } catch (e) {}

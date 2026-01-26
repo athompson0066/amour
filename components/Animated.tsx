@@ -19,10 +19,10 @@ export const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ imageUrl, childr
     const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
     return (
-        <div ref={ref} className="relative overflow-hidden w-full" style={{ height }}>
+        <div ref={ref} className="relative overflow-hidden w-full bg-slate-900" style={{ height }}>
              <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%]">
-                 <img src={imageUrl} alt="Background" className="w-full h-full object-cover" />
-                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent z-10" />
+                 <img src={imageUrl} alt="" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent z-10" />
              </motion.div>
              <div className="relative z-20 h-full">
                  {children}

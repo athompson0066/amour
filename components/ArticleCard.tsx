@@ -65,8 +65,8 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick, viewMode = 'gr
                       {post.isPremium && <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Premium</span>}
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-slate-900 mb-3 group-hover:text-rose-600 transition-colors leading-tight">{post.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 md:line-clamp-2">
-                      {post.subtitle}
+                  <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3 md:line-clamp-2">
+                      {post.subtitle || "No description provided."}
                   </p>
                   <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center space-x-4">
@@ -130,8 +130,8 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onClick, viewMode = 'gr
           <h3 className="text-xl font-serif font-bold text-slate-900 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-rose-600 group-hover:to-purple-600 transition-all leading-tight mb-3">
             {post.title}
           </h3>
-          <p className="text-slate-500 text-sm line-clamp-3 mb-6 font-light leading-relaxed group-hover:text-slate-600">
-            {post.subtitle}
+          <p className="text-slate-600 text-sm line-clamp-3 mb-6 font-light leading-relaxed group-hover:text-slate-700">
+            {post.subtitle || "No description provided."}
           </p>
         </div>
         
