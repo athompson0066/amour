@@ -17,28 +17,27 @@ export const DEFAULT_AUTHOR: Author = {
 
 const SEED_DATA: Post[] = [
   {
-    id: 'course-1',
-    title: 'The Attachment Theory Masterclass',
-    subtitle: 'Identify your secure, anxious, or avoidant style and transform how you connect with others.',
-    type: 'course',
-    coverImage: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800&h=400',
+    id: 'article-trust-1',
+    title: 'Building Lasting Bonds: The Science of Trust and Attachment Theory',
+    subtitle: 'Understanding your attachment style is the foundation of creating secure, long-term relationships based on mutual trust.',
+    type: 'article',
+    coverImage: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1200&h=600',
     author: DEFAULT_AUTHOR,
-    publishedAt: new Date().toISOString(),
-    readTime: '4h Course',
-    isPremium: true,
-    price: 49.99,
-    payhipProductUrl: 'https://payhip.com/b/example',
-    unlockPassword: 'HEAL-ATTACH-2024',
-    tags: ['Psychology', 'Healing', 'Growth'],
+    publishedAt: '2026-01-25T09:00:00.000Z',
+    readTime: '6 min read',
+    isPremium: false,
+    tags: ['Trust', 'Attachment Theory', 'Science of Love'],
     blocks: [
-      { id: 'b1', type: 'header', content: 'Module 1: Foundations of Attachment' },
-      { id: 'b2', type: 'text', content: 'Explore the origins of attachment theory.' }
+      { id: 'b1', type: 'header', content: 'The Biological Imperative of Trust' },
+      { id: 'b2', type: 'text', content: 'Trust is not just a feeling; it is a neurological state. When we feel secure in our attachment, our brains release oxytocin, lowering our cortisol levels and allowing for true vulnerability.' },
+      { id: 'b3', type: 'quote', content: 'Trust is built in very small moments, which I call "sliding door moments". — Dr. John Gottman' },
+      { id: 'b4', type: 'header', content: 'Identifying Your Style' },
+      { id: 'b5', type: 'text', content: 'Whether you are anxious, avoidant, or secure, knowing your default setting is the first step toward conscious connection.' }
     ]
   }
 ];
 
 const BASE_AGENTS: Agent[] = [
-  // --- CORE RELATIONSHIP EXPERTS (5 Tokens/msg) ---
   {
     id: 'agent-1',
     name: 'Dr. Elena Rose',
@@ -60,140 +59,6 @@ const BASE_AGENTS: Agent[] = [
     tokenCost: 5,
     isOnline: true,
     expertise: ['Modern Dating', 'Self-Worth', 'Boundary Setting']
-  },
-  
-  // --- THE ASTRO-COUNCIL (10 Tokens/msg) ---
-  {
-    id: 'astro-aries',
-    name: 'Jordan Vane',
-    role: 'Aries Passion & Conflict Strategist',
-    category: 'astro',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200&h=200',
-    description: 'Stop burning bridges with your intensity. Learn how to date an Aries without the constant ego-clashes.',
-    tokenCost: 10,
-    isOnline: true,
-    expertise: ['Impulse Control', 'Direct Communication', 'Healthy Competition']
-  },
-  {
-    id: 'astro-taurus',
-    name: 'Elena Rossi',
-    role: 'Taurus Stability & Sensuality Advisor',
-    category: 'astro',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200&h=200',
-    description: 'Stuck in a comfort zone that feels like a prison? I help Taurus souls build reliable love.',
-    tokenCost: 10,
-    isOnline: true,
-    expertise: ['Overcoming Inertia', 'Sensual Wealth', 'Long-term Trust']
-  },
-  {
-      id: 'astro-gemini',
-      name: 'Liam Sterling',
-      role: 'Gemini Communication & Connection Coach',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Tired of being labeled a "ghost"? I help Gemini souls find emotional depth.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Consistency Coaching', 'Digital Banter', 'Mind-Heart Sync']
-  },
-  {
-      id: 'astro-cancer',
-      name: 'Sophia Moon',
-      role: 'Cancer Vulnerability & Security Mentor',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1491349174775-aaafddd81942?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Is your "shell" scaring away the right people? Heal past betrayal with Sophia.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Inner Child Healing', 'Safe Intimacy', 'Family Dynamics']
-  },
-  {
-      id: 'astro-leo',
-      name: 'Julian Hart',
-      role: 'Leo Self-Love & Romance Specialist',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Stop seeking validation. Julian helps Leos find magnetism through radical self-love.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Confidence Building', 'Generosity', 'Creative Dating']
-  },
-  {
-      id: 'astro-virgo',
-      name: 'Clara Thorne',
-      role: 'Virgo Harmony & Standards Analyst',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Is your "checklist" killing chemistry? Clara helps Virgos lower the inner critic.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Anxiety Management', 'Acts of Service', 'Relationship Flow']
-  },
-  {
-      id: 'astro-libra',
-      name: 'Oliver Gray',
-      role: 'Libra Partnership & Identity Consultant',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Losing yourself again? Oliver teaches Libras how to find their voice in union.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Boundary Setting', 'Fair Negotiation', 'Self-Individuation']
-  },
-  {
-      id: 'astro-scorpio',
-      name: 'Damien Cross',
-      role: 'Scorpio Trust & Transformation Expert',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Dating a Scorpio can feel like an interrogation. Damien trades suspicion for merging.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Shadow Integration', 'Intense Intimacy', 'Radical Trust']
-  },
-  {
-      id: 'astro-sagittarius',
-      name: 'Maya Archer',
-      role: 'Sagittarius Freedom & Commitment Guide',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Terrified of the "ball and chain"? Maya finds commitment that feels like expansion.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Commitment Phobia', 'Spiritual Growth', 'Honest Dating']
-  },
-  {
-      id: 'astro-capricorn',
-      name: 'Arthur Peak',
-      role: 'Capricorn Devotion & Legacy Strategist',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Career thriving but heart starving? Arthur builds a lasting legacy of love.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Emotional Availability', 'Work-Life-Love Balance', 'Stability']
-  },
-  {
-      id: 'astro-aquarius',
-      name: 'Quinn Nova',
-      role: 'Aquarius Independence & Intimacy Expert',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Dating an Aquarius can feel like dating a robot. Quinn bridges the detachment gap.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Intellectual Sparks', 'Futuristic Love', 'Individuality']
-  },
-  {
-      id: 'astro-pisces',
-      name: 'Isabella Marina',
-      role: 'Pisces Boundaries & Soul-Bonding Mentor',
-      category: 'astro',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200',
-      description: 'Drowning in other people\'s emotions? Isabella protects your heart to find your twin.',
-      tokenCost: 10,
-      isOnline: true,
-      expertise: ['Empathy Limits', 'Spiritual Union', 'Reality Alignment']
   }
 ];
 
@@ -221,15 +86,15 @@ const removeFromBlacklist = (id: string) => {
 const mapRowToPost = (row: any): Post => ({
   id: row.id,
   title: row.title,
-  subtitle: row.subtitle,
-  type: row.type,
-  coverImage: row.cover_image,
+  subtitle: row.subtitle || '',
+  type: row.type || 'article',
+  coverImage: row.cover_image || row.image || 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1200&h=600',
   author: row.author || DEFAULT_AUTHOR,
-  publishedAt: row.published_at,
+  publishedAt: row.published_at || row.created_at || new Date().toISOString(),
   readTime: row.read_time || '5 min read', 
-  isPremium: row.is_premium,
+  isPremium: !!row.is_premium,
   price: row.price,
-  payhipProductUrl: row.payhip_product_url || undefined, 
+  payhipProductUrl: row.payhip_url || row.payhip_product_url || undefined, 
   unlockPassword: row.unlock_password || undefined,
   tags: row.tags || [],
   blocks: row.blocks || [],
@@ -237,24 +102,34 @@ const mapRowToPost = (row: any): Post => ({
   seo: row.seo || undefined
 });
 
-const mapPostToRow = (post: Post) => ({
-    id: post.id,
-    title: post.title,
-    subtitle: post.subtitle,
-    type: post.type,
-    cover_image: post.coverImage,
-    author: post.author,
-    published_at: post.publishedAt,
-    read_time: post.readTime,
-    is_premium: !!post.isPremium,
-    price: post.price || 0,
-    payhip_product_url: post.payhipProductUrl || null,
-    unlock_password: post.unlockPassword || null,
-    tags: post.tags || [],
-    blocks: post.blocks || [],
-    related_videos: post.relatedVideos || [],
-    seo: post.seo || null
-});
+/**
+ * ADAPTIVE MAPPING: Returns a payload based on the requested complexity level.
+ * Minimal mode is designed to survive in tables with only basic columns.
+ */
+const mapPostToRow = (post: Post, minimal = false) => {
+    const row: any = {
+        id: post.id,
+        title: post.title,
+        type: post.type,
+        blocks: post.blocks || []
+    };
+
+    if (!minimal) {
+        row.subtitle = post.subtitle;
+        row.cover_image = post.coverImage;
+        row.author = post.author;
+        row.published_at = post.publishedAt;
+        row.read_time = post.readTime;
+        row.is_premium = !!post.isPremium;
+        row.price = post.price || 0;
+        row.tags = post.tags || [];
+        row.related_videos = post.relatedVideos || [];
+        row.seo = post.seo || null;
+        // We still omit payhip/unlock here unless user confirms they exist
+    }
+
+    return row;
+};
 
 const mapRowToAgent = (row: any): Agent => ({
     id: row.id,
@@ -265,10 +140,10 @@ const mapRowToAgent = (row: any): Agent => ({
     description: row.description,
     systemInstruction: row.system_instruction,
     embedCode: row.embed_code,
-    tokenCost: row.token_cost || 5, // Map token cost
+    tokenCost: row.token_cost || 5, 
     price: row.price,
     priceValue: row.price_value,
-    payhipProductUrl: row.payhip_product_url,
+    payhipProductUrl: row.payhip_url || row.payhip_product_url || undefined,
     unlockPassword: row.unlock_password,
     isOnline: row.is_online ?? true,
     expertise: row.expertise || [],
@@ -277,26 +152,31 @@ const mapRowToAgent = (row: any): Agent => ({
     seo: row.seo || undefined
 });
 
-const mapAgentToRow = (agent: Agent) => ({
-    id: agent.id,
-    name: agent.name,
-    role: agent.role,
-    category: agent.category,
-    avatar: agent.avatar,
-    description: agent.description,
-    system_instruction: agent.systemInstruction || null,
-    embed_code: agent.embedCode || null,
-    token_cost: agent.tokenCost,
-    price: agent.price || null,
-    price_value: agent.priceValue || null,
-    payhip_product_url: agent.payhipProductUrl || null,
-    unlock_password: agent.unlockPassword || null,
-    is_online: !!agent.isOnline,
-    expertise: agent.expertise || [],
-    tools: agent.tools || {},
-    thinking_budget: agent.thinkingBudget || 0,
-    seo: agent.seo || null
-});
+const mapAgentToRow = (agent: Agent, minimal = false) => {
+    const row: any = {
+        id: agent.id,
+        name: agent.name,
+        role: agent.role,
+        avatar: agent.avatar,
+        description: agent.description
+    };
+
+    if (!minimal) {
+        row.category = agent.category;
+        row.system_instruction = agent.systemInstruction || null;
+        row.embed_code = agent.embedCode || null;
+        row.token_cost = agent.tokenCost;
+        row.price = agent.price || null;
+        row.price_value = agent.priceValue || null;
+        row.is_online = !!agent.isOnline;
+        row.expertise = agent.expertise || [];
+        row.tools = agent.tools || {};
+        row.thinking_budget = agent.thinkingBudget || 0;
+        row.seo = agent.seo || null;
+    }
+
+    return row;
+};
 
 export const getPosts = async (): Promise<Post[]> => {
   const supabase = getSupabase();
@@ -305,7 +185,7 @@ export const getPosts = async (): Promise<Post[]> => {
   
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('posts').select('*').order('published_at', { ascending: false });
+      const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
       if (error) console.error("Supabase fetch error:", error.message);
       else if (data) supabasePosts = data.map(mapRowToPost);
     } catch (e) {
@@ -317,8 +197,9 @@ export const getPosts = async (): Promise<Post[]> => {
   const localPosts: Post[] = stored ? JSON.parse(stored) : SEED_DATA;
   
   const combinedMap = new Map<string, Post>();
-  supabasePosts.forEach(p => combinedMap.set(p.id, p));
+  SEED_DATA.forEach(p => combinedMap.set(p.id, p));
   localPosts.forEach(p => combinedMap.set(p.id, p));
+  supabasePosts.forEach(p => combinedMap.set(p.id, p));
 
   const combined = Array.from(combinedMap.values());
 
@@ -330,6 +211,7 @@ export const getPosts = async (): Promise<Post[]> => {
 export const savePost = async (post: Post): Promise<void> => {
   removeFromBlacklist(post.id);
 
+  // 1. Local Storage Update (Safety First)
   try {
       const stored = localStorage.getItem(STORAGE_KEY);
       let currentPosts: Post[] = stored ? JSON.parse(stored) : [...SEED_DATA];
@@ -341,16 +223,57 @@ export const savePost = async (post: Post): Promise<void> => {
       console.error("Local save failed:", e);
   }
 
+  // 2. Adaptive Cloud Sync
   const supabase = getSupabase();
   if (supabase) {
     try {
-      const row = mapPostToRow(post);
-      const { error } = await supabase.from('posts').upsert(row);
-      if (error) console.error("CLOUD SYNC FAILED:", error.message, error.details);
+      // Phase A: Try full payload
+      const fullRow = mapPostToRow(post, false);
+      const { error: fullError } = await supabase.from('posts').upsert(fullRow, { onConflict: 'id' });
+      
+      if (fullError) {
+          // Phase B: Detect missing columns (Code 42703 in Postgres)
+          if (fullError.code === '42703' || fullError.message.toLowerCase().includes('column')) {
+              console.warn("Full sync failed due to missing columns. Attempting Minimal Core Sync...");
+              const minRow = mapPostToRow(post, true);
+              const { error: minError } = await supabase.from('posts').upsert(minRow, { onConflict: 'id' });
+              
+              if (minError) {
+                  throw new Error(`Minimal Sync Failed: ${minError.message}. Basic 'posts' table structure required.`);
+              }
+              console.log("Core Sync successful. Content is live without partial metadata.");
+          } else {
+              throw new Error(fullError.message);
+          }
+      }
     } catch (e: any) {
       console.error("Cloud sync exception:", e);
+      throw e;
     }
   }
+};
+
+export const syncAllToCloud = async (): Promise<{ success: number, failed: number }> => {
+    const supabase = getSupabase();
+    if (!supabase) return { success: 0, failed: 0 };
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return { success: 0, failed: 0 };
+
+    const localPosts: Post[] = JSON.parse(stored);
+    let success = 0;
+    let failed = 0;
+
+    for (const post of localPosts) {
+        try {
+            await savePost(post);
+            success++;
+        } catch (e) {
+            failed++;
+        }
+    }
+
+    return { success, failed };
 };
 
 export const deletePost = async (id: string): Promise<void> => {
@@ -393,9 +316,9 @@ export const getAgentsData = async (): Promise<Agent[]> => {
     }));
 
     const combinedMap = new Map<string, Agent>();
-    supabaseAgents.forEach(a => combinedMap.set(a.id, a));
     baseWithOverrides.forEach(a => combinedMap.set(a.id, a));
     custom.forEach(a => combinedMap.set(a.id, a));
+    supabaseAgents.forEach(a => combinedMap.set(a.id, a));
 
     return Array.from(combinedMap.values())
         .filter(a => !excluded.includes(a.id) && !blacklisted.includes(a.id));
@@ -440,8 +363,13 @@ export const saveAgent = async (agentId: string, updates: Partial<Agent>): Promi
     const supabase = getSupabase();
     if (supabase) {
         try {
-            const row = mapAgentToRow(fullAgent);
-            await supabase.from('agents').upsert(row);
+            const fullRow = mapAgentToRow(fullAgent, false);
+            const { error: fullError } = await supabase.from('agents').upsert(fullRow, { onConflict: 'id' });
+            
+            if (fullError && (fullError.code === '42703' || fullError.message.toLowerCase().includes('column'))) {
+                const minRow = mapAgentToRow(fullAgent, true);
+                await supabase.from('agents').upsert(minRow, { onConflict: 'id' });
+            }
         } catch (e) {}
     }
 };
@@ -455,8 +383,13 @@ export const addCustomAgent = async (agent: Agent): Promise<void> => {
     const supabase = getSupabase();
     if (supabase) {
         try {
-            const row = mapAgentToRow(agent);
-            await supabase.from('agents').upsert(row);
+            const fullRow = mapAgentToRow(agent, false);
+            const { error: fullError } = await supabase.from('agents').upsert(fullRow, { onConflict: 'id' });
+            
+            if (fullError && (fullError.code === '42703' || fullError.message.toLowerCase().includes('column'))) {
+                const minRow = mapAgentToRow(agent, true);
+                await supabase.from('agents').upsert(minRow, { onConflict: 'id' });
+            }
         } catch (e) {}
     }
 };

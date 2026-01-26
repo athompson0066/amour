@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Post, ContentType, Agent } from '../types';
 import { isSupabaseConfigured } from '../config';
-import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check, Mic2, Link } from 'lucide-react';
+import { Edit, Trash2, Plus, Eye, Search, LayoutDashboard, FileText, BookOpen, Mic, List, MoreVertical, Loader2, Wifi, WifiOff, Sparkles, BrainCircuit, Mail, Map, Cpu, Book, Settings, CircleDollarSign, RefreshCw, UserCheck, Users, Stars, Code, Check, Mic2, Link, CloudUpload } from 'lucide-react';
 import { FadeIn } from './Animated';
+import { syncAllToCloud } from '../services/storage';
 
 interface AdminDashboardProps {
   posts: Post[];
@@ -49,11 +50,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [expertSubTab, setExpertSubTab] = useState<'relationship' | 'astro'>('relationship');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     setIsConnected(isSupabaseConfigured());
     onRefresh(); 
   }, []);
+
+  const handleCloudSync = async () => {
+      setIsSyncing(true);
+      try {
+          const result = await syncAllToCloud();
+          alert(`Sync Complete! Successfully pushed ${result.success} items. ${result.failed} items encountered errors (Partial schema match used where columns were missing).`);
+          await onRefresh();
+      } catch (e) {
+          alert("Cloud Sync failed. Check connection.");
+      } finally {
+          setIsSyncing(false);
+      }
+  };
 
   const handleDelete = async (id: string) => {
     setIsDeletingId(id);
@@ -63,7 +78,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         } else {
             await onDeleteAgent(id);
         }
-        // Brief local delay to ensure UI updates smoothly after async logic
         setTimeout(() => {
             setDeleteConfirm(null);
             setIsDeletingId(null);
@@ -131,9 +145,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="flex items-center mt-2 space-x-3">
                     <p className="text-slate-500 text-sm">Orchestrate your directory's digital universe.</p>
                     {isConnected ? (
-                        <span className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100">
+                        <button onClick={handleCloudSync} className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 hover:bg-emerald-100 transition-colors">
                             <Wifi size={12} className="mr-1" /> Cloud Connected
-                        </span>
+                        </button>
                     ) : (
                         <span className="flex items-center text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">
                             <WifiOff size={12} className="mr-1" /> Local Storage Only
@@ -143,6 +157,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <div className="flex flex-wrap gap-3">
               <button onClick={onSettings} className="bg-slate-100 text-slate-700 px-5 py-3 rounded-full font-medium hover:bg-slate-200 transition-all flex items-center border border-slate-200"><Settings size={18} className="mr-2" /> API Settings</button>
+              <button onClick={handleCloudSync} disabled={isSyncing || !isConnected} className="bg-emerald-50 text-emerald-700 px-5 py-3 rounded-full font-medium hover:bg-emerald-100 transition-all flex items-center border border-emerald-100 disabled:opacity-50">
+                  {isSyncing ? <Loader2 size={18} className="mr-2 animate-spin" /> : <CloudUpload size={18} className="mr-2" />}
+                  Push to Cloud
+              </button>
               <button onClick={onGoToAudioStudio} className="bg-rose-50 text-rose-700 px-5 py-3 rounded-full font-medium hover:bg-rose-100 transition-all flex items-center border border-rose-100"><Mic2 size={18} className="mr-2" /> Voice Studio</button>
               <button onClick={onGoToPricing} className="bg-amber-100 text-amber-700 px-5 py-3 rounded-full font-medium hover:bg-amber-200 transition-all flex items-center border border-amber-200"><CircleDollarSign size={18} className="mr-2" /> Price Strategy</button>
               <button onClick={onGoToWorkspace} className="bg-indigo-600 text-white px-5 py-3 rounded-full font-medium hover:bg-indigo-700 shadow-lg transition-all flex items-center group"><BrainCircuit size={18} className="mr-2 group-hover:rotate-12 transition-transform" /> Agent Workspace</button>

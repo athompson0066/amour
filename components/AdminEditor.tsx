@@ -28,7 +28,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
   const [isSaving, setIsSaving] = useState(false);
   const [tags, setTags] = useState(initialPost?.tags.join(', ') || '');
   
-  // SEO States
   const [seo, setSeo] = useState<SEOMetadata>(initialPost?.seo || {
       metaTitle: '',
       metaDescription: '',
@@ -196,8 +195,10 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
         };
         await savePost(newPost);
         onSave();
-    } catch (error) {
+    } catch (error: any) {
         console.error("Save failed:", error);
+        alert(`Cloud Publication Failed: ${error.message || 'Check database connection'}. The post has been saved locally. Use "Push to Cloud" from the Dashboard to retry.`);
+        onSave(); // Still proceed to dashboard since local save worked
     } finally {
         setIsSaving(false);
     }
@@ -398,7 +399,7 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                                         <ExternalLink size={10} className="mr-1" />
                                         Payhip Product Link
                                     </label>
-                                    <input type="text" value={payhipUrl} onChange={(e) => setPayhipUrl(e.target.value)} placeholder="https://payhip.com/b/XXXX" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none" />
+                                    <input type="text" value={payhipUrl} onChange={(e) => setPayhipUrl(e.target.value)} placeholder="https://payhip.com/b/XXXX" className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono outline-none" />
                                 </div>
                                 <div className="pt-2 border-t border-slate-200">
                                     <label className="block text-[10px] font-bold text-rose-500 uppercase mb-1 flex items-center"><Key size={10} className="mr-1" /> Access Unlock Password</label>
@@ -413,7 +414,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                 </div>
             </div>
 
-            {/* SEO Optimization Card */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center"><Globe className="mr-2 text-indigo-500" size={14} />Search Visibility</h3>
@@ -464,7 +464,6 @@ const AdminEditor: React.FC<AdminEditorProps> = ({ onCancel, onSave, initialPost
                         />
                     </div>
 
-                    {/* Google Snippet Preview */}
                     <div className="mt-6 pt-6 border-t border-slate-100">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3 flex items-center"><Search size={10} className="mr-1" /> Google Snippet Preview</label>
                         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm font-sans">
